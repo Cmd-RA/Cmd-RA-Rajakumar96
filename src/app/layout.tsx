@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { NotificationPermission } from '@/components/notification-permission';
 
 export const metadata: Metadata = {
   title: 'मोनेटाइजेशन - कमाएँ और साझा करें',
@@ -22,6 +23,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen flex flex-col">
         <FirebaseClientProvider>
+          <NotificationPermission />
           <main className="flex-1 pb-20 md:pb-0 md:pt-4">
             {children}
           </main>
