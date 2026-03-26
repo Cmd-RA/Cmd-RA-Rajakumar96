@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Header } from "@/components/layout/header"
@@ -9,6 +8,7 @@ import { AppDownloadBanner } from "@/components/layout/app-download-banner"
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Footer } from "@/components/layout/footer"
 
 export default function Home() {
   const db = useFirestore()
@@ -22,9 +22,9 @@ export default function Home() {
   const featuredPost = PlaceHolderImages[0]
 
   return (
-    <div className="min-h-screen pb-20 md:pb-8">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Header />
-      <div className="container max-w-xl mx-auto px-4 pt-4">
+      <div className="container max-w-xl mx-auto px-4 pt-4 mb-12">
         
         <AppDownloadBanner />
 
@@ -84,7 +84,6 @@ export default function Home() {
                 imageUrl={post.imageUrl}
                 title={post.description}
                 description="मोनेटाइजेशन पर साझा की गई एक और बेहतरीन याद। कंटेंट बनाएँ और कमाएँ!"
-                // Deterministic likes to avoid hydration mismatch
                 likes={(parseInt(post.id) * 157) % 500 + 50}
               />
             ))
@@ -95,6 +94,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Footer />
       <BottomNav />
     </div>
   )
