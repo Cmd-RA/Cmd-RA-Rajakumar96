@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
   Trophy, LayoutGrid, DollarSign, PlusCircle,
-  LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2, ShieldCheck
+  LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2, ShieldCheck, MessageCircle, ExternalLink
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -137,6 +137,28 @@ export default function ProfilePage() {
             </Button>
           </div>
         </div>
+
+        {/* Support Section - NEW 24/7 Telegram Support */}
+        <Card className="mt-8 border-none shadow-2xl bg-[#0088cc]/10 overflow-hidden rounded-[2rem] border-2 border-[#0088cc]/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-[#0088cc] rounded-2xl text-white shadow-lg">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-[#0088cc] uppercase tracking-tight">24/7 सहायता (Support)</h3>
+                  <p className="text-[11px] font-bold text-muted-foreground italic">टेलीग्राम ग्रुप ज्वाइन करें और हमसे सीधे बात करें।</p>
+                </div>
+              </div>
+              <a href="https://t.me/srbis" target="_blank" rel="noopener noreferrer">
+                <Button className="bg-[#0088cc] hover:bg-[#006699] text-white rounded-xl h-10 px-4 font-black text-xs gap-2">
+                  JOIN NOW <ExternalLink className="h-3 w-3" />
+                </Button>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Monetization Progress */}
         <div className="mt-8 space-y-6">
