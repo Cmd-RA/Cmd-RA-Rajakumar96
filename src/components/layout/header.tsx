@@ -8,7 +8,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4 max-w-2xl mx-auto">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl font-bold font-headline tracking-tighter text-primary">
-            धनधारा
+            मोनेटाइजेशन
           </span>
         </Link>
         <div className="flex items-center gap-2">

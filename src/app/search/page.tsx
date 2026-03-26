@@ -6,7 +6,7 @@ import { Search as SearchIcon, TrendingUp, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function SearchPage() {
-  const trendingTags = ["#हिमालय", "#भोजन", "#दिवाली", "#फोटोग्राफी", "#कमाई", "#धनधारा"]
+  const trendingTags = ["#हिमालय", "#भोजन", "#दिवाली", "#फोटोग्राफी", "#कमाई", "#मोनेटाइजेशन"]
   const suggestedUsers = [
     { name: "अंजलि शर्मा", handle: "@anjali_clicks", avatar: "https://picsum.photos/seed/user1/100" },
     { name: "अमित वर्मा", handle: "@amit_v", avatar: "https://picsum.photos/seed/user2/100" },

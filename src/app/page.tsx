@@ -45,7 +45,7 @@ export default function Home() {
               userAvatar={`https://picsum.photos/seed/user${post.id}/100`}
               imageUrl={post.imageUrl}
               title={post.description}
-              description="धनधारा पर साझा की गई एक और बेहतरीन याद। कंटेंट बनाएँ और कमाएँ!"
+              description="मोनेटाइजेशन पर साझा की गई एक और बेहतरीन याद। कंटेंट बनाएँ और कमाएँ!"
               likes={Math.floor(Math.random() * 500)}
             />
           ))}

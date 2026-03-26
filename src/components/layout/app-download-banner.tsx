@@ -25,7 +25,7 @@ export function AppDownloadBanner() {
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <h3 className="text-xl font-bold font-headline mb-1">धनधारा ऐप डाउनलोड करें!</h3>
+          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन ऐप डाउनलोड करें!</h3>
           <p className="text-sm opacity-90 mb-4">
             बेहतर अनुभव, तेज़ ब्राउज़िंग और एक्सक्लूसिव रिवॉर्ड्स के लिए आज ही हमारा मोबाइल ऐप इंस्टॉल करें।
           </p>

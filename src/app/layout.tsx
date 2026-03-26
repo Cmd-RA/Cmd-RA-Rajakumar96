@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'धनधारा - कमाएँ और साझा करें',
+  title: 'मोनेटाइजेशन - कमाएँ और साझा करें',
   description: 'आपका अपना सोशल मीडिया प्लेटफॉर्म जहाँ कंटेंट के साथ कमाई भी होती है।',
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
         <main className="flex-1 pb-20 md:pb-0 md:pt-4">
           {children}
         </main>
-        <Toaster />
+        < Toaster />
       </body>
     </html>
   );
