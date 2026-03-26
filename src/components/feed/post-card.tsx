@@ -3,7 +3,7 @@
 
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from "lucide-react"
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, UserPlus, Check } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { useUser, useFirestore, updateDocumentNonBlocking } from "@/firebase"
-import { doc, arrayUnion, arrayRemove } from "firebase/firestore"
+import { doc, arrayUnion, arrayRemove, increment } from "firebase/firestore"
 
 interface PostCardProps {
   id: string
@@ -42,6 +42,7 @@ export function PostCard({
   
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(likeIds.length)
+  const [isFollowing, setIsFollowing] = useState(false)
 
   useEffect(() => {
     if (user && likeIds.includes(user.uid)) {
@@ -67,9 +68,25 @@ export function PostCard({
     }
   }
 
+  const handleFollow = () => {
+    if (!user) {
+      toast({ variant: "destructive", title: "लॉगिन आवश्यक", description: "फॉलो करने के लिए लॉगिन करें।" })
+      return
+    }
+    if (user.uid === userId) {
+      toast({ title: "सूचना", description: "आप खुद को फॉलो नहीं कर सकते।" })
+      return
+    }
+
+    const creatorRef = doc(db, "users", userId)
+    setIsFollowing(true)
+    updateDocumentNonBlocking(creatorRef, { followerCount: increment(1) })
+    toast({ title: "सफलता", description: `अब आप ${userName} को फॉलो कर रहे हैं!` })
+  }
+
   const handleShare = async (platform?: string) => {
     const shareUrl = `${window.location.origin}/post/${id}`
-    const shareText = `मोनेटाइजेशन पर इस शानदार फोटो को देखें: ${title}`
+    const shareText = `मोनेटाइजेशन पर इस शानदार कला को देखें: ${title}`
 
     if (platform === 'whatsapp') {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
@@ -86,30 +103,47 @@ export function PostCard({
   }
 
   return (
-    <Card className={cn("overflow-hidden border-none shadow-md mb-6 rounded-3xl bg-white select-none transition-all hover:shadow-lg", isFeatured && "ring-2 ring-primary/30")}>
-      <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 ring-2 ring-primary/10">
+    <Card className={cn("overflow-hidden border-none shadow-2xl mb-10 rounded-[2.5rem] bg-white select-none transition-all hover:-translate-y-1", isFeatured && "ring-4 ring-primary/20")}>
+      <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-12 w-12 ring-2 ring-primary/10 shadow-sm">
             <AvatarImage src={userAvatar || `https://picsum.photos/seed/${userId}/100`} />
             <AvatarFallback>{userName[0]}</AvatarFallback>
           </Avatar>
-          <div>
-            <p className="text-sm font-bold leading-none">{userName}</p>
+          <div className="flex flex-col">
+            <p className="text-md font-black leading-none">{userName}</p>
             {isFeatured && (
-              <Badge className="mt-1 h-4 text-[9px] bg-primary/10 text-primary border-none uppercase tracking-tighter">
-                FEATURED
+              <Badge className="mt-1 h-5 text-[9px] bg-yellow-400 text-yellow-900 border-none uppercase tracking-widest font-black">
+                Featured Artist
               </Badge>
             )}
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+        
+        <div className="flex items-center gap-2">
+          {!isFollowing ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full h-8 px-4 text-xs font-black border-primary/20 text-primary hover:bg-primary/5"
+              onClick={handleFollow}
+            >
+              <UserPlus className="h-3 w-3 mr-1.5" /> फॉलो
+            </Button>
+          ) : (
+            <Badge variant="secondary" className="rounded-full h-8 px-4 text-xs font-black bg-primary/5 text-primary border-none">
+              <Check className="h-3 w-3 mr-1.5" /> फॉलोइंग
+            </Badge>
+          )}
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
       </CardHeader>
       
       {/* Protected Image Container */}
       <div 
-        className="relative aspect-square w-full overflow-hidden bg-muted cursor-default"
+        className="relative aspect-[4/5] w-full overflow-hidden bg-muted cursor-default"
         onContextMenu={(e) => e.preventDefault()}
       >
         <Image
@@ -117,62 +151,66 @@ export function PostCard({
           alt={title}
           fill
           draggable={false}
-          className="object-cover pointer-events-none"
+          className="object-cover pointer-events-none transition-transform duration-700 hover:scale-105"
           priority={isFeatured}
         />
-        {/* Invisible protection layer */}
+        {/* Anti-screenshot/copy protection layer */}
         <div className="absolute inset-0 z-10 bg-transparent select-none" />
       </div>
 
-      <CardContent className="p-5">
-        <h3 className="font-bold text-xl mb-2 text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">
+      <CardContent className="p-8">
+        <h3 className="font-black text-2xl mb-3 text-foreground tracking-tight">{title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed font-medium">
           {description}
         </p>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex flex-col items-start border-t border-muted/30">
-        <div className="flex items-center gap-6 mt-4 w-full px-2">
+      <CardFooter className="p-6 pt-0 flex flex-col items-start border-t border-muted/20">
+        <div className="flex items-center gap-8 mt-6 w-full px-2">
           <button
             onClick={handleLike}
             className={cn(
-              "flex items-center gap-2 transition-all active:scale-125",
+              "flex items-center gap-2.5 transition-all active:scale-150 group",
               isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
             )}
           >
-            <Heart className={cn("h-7 w-7", isLiked && "fill-current")} />
-            <span className="text-sm font-bold">{likeCount}</span>
+            <div className={cn("p-2 rounded-full transition-colors", isLiked ? "bg-red-50" : "bg-transparent group-hover:bg-red-50")}>
+              <Heart className={cn("h-7 w-7", isLiked && "fill-current")} />
+            </div>
+            <span className="text-md font-black">{likeCount}</span>
           </button>
           
-          <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-            <MessageCircle className="h-7 w-7" />
-            <span className="text-sm font-bold">0</span>
+          <button className="flex items-center gap-2.5 text-muted-foreground hover:text-primary transition-colors group">
+            <div className="p-2 rounded-full transition-colors group-hover:bg-primary/5">
+              <MessageCircle className="h-7 w-7" />
+            </div>
+            <span className="text-md font-black">0</span>
           </button>
 
           <div className="flex-1" />
 
           <button 
             onClick={() => handleShare()}
-            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-all active:rotate-12"
+            className="flex items-center gap-2.5 text-muted-foreground hover:text-primary transition-all active:rotate-12 group"
           >
-            <Share2 className="h-7 w-7" />
+            <div className="p-2 rounded-full transition-colors group-hover:bg-primary/5">
+              <Share2 className="h-7 w-7" />
+            </div>
           </button>
         </div>
 
-        {/* Quick Social Share Buttons */}
-        <div className="flex gap-3 mt-6 w-full">
+        {/* Action Share Row */}
+        <div className="grid grid-cols-2 gap-4 mt-8 w-full">
           <Button 
             variant="outline" 
-            size="sm" 
-            className="flex-1 h-10 text-[11px] gap-2 rounded-xl border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/5 font-bold"
+            className="h-12 text-[12px] gap-2 rounded-2xl border-[#25D366]/40 text-[#25D366] hover:bg-[#25D366]/5 font-black uppercase tracking-wider"
             onClick={() => handleShare('whatsapp')}
           >
             <Send className="h-4 w-4" /> WhatsApp
           </Button>
           <Button 
             variant="outline" 
-            size="sm" 
-            className="flex-1 h-10 text-[11px] gap-2 rounded-xl border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2]/5 font-bold"
+            className="h-12 text-[12px] gap-2 rounded-2xl border-[#1877F2]/40 text-[#1877F2] hover:bg-[#1877F2]/5 font-black uppercase tracking-wider"
             onClick={() => handleShare('facebook')}
           >
             <Share2 className="h-4 w-4" /> Facebook
