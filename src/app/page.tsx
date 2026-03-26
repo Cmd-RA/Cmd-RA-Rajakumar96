@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { PostCard } from "@/components/feed/post-card"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
+import { AppDownloadBanner } from "@/components/layout/app-download-banner"
 
 export default function Home() {
   const featuredPost = PlaceHolderImages[0]
@@ -11,6 +12,10 @@ export default function Home() {
     <div className="min-h-screen pb-20 md:pb-8">
       <Header />
       <div className="container max-w-xl mx-auto px-4 pt-4">
+        
+        {/* App Download Prompt */}
+        <AppDownloadBanner />
+
         {/* Featured Section */}
         <div className="mb-6">
           <h2 className="text-lg font-headline font-bold mb-4 flex items-center gap-2">
