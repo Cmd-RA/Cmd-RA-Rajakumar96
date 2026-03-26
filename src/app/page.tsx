@@ -1,6 +1,6 @@
-
 "use client"
 
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { PostCard } from "@/components/feed/post-card"
@@ -14,6 +14,11 @@ import { Sparkles, Star, Info, LayoutGrid, AlertCircle } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   
   // Fetch user posts - Optimized for infinite feel
   const postsQuery = useMemoFirebase(() => {
@@ -33,6 +38,26 @@ export default function Home() {
   const settingsRef = useMemoFirebase(() => doc(db, "app_settings", "global"), [db])
   const { data: settings } = useDoc(settingsRef)
 
+  const AdFrame = ({ label }: { label: string }) => {
+    if (!isMounted) return <div className="min-h-[100px]" />
+    
+    return (
+      <div className="my-8">
+        {settings?.adsenseCode ? (
+          <div className="p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center min-h-[120px]">
+             <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">{label}</p>
+             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+          </div>
+        ) : (
+          <div className="p-6 bg-muted/20 rounded-[2.5rem] border border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[120px]">
+            <AlertCircle className="h-5 w-5 text-muted-foreground/40 mb-2" />
+            <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">AD FRAME READY ({label})</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-background/30">
       <Header />
@@ -41,20 +66,7 @@ export default function Home() {
         
         <AppDownloadBanner />
 
-        {/* TOP AD FRAME - High Visibility for AdSense Bots */}
-        <div className="my-8">
-          {settings?.adsenseCode ? (
-            <div className="p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center min-h-[120px]">
-               <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">Sponsored Content</p>
-               <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
-            </div>
-          ) : (
-            <div className="p-6 bg-muted/20 rounded-[2.5rem] border border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[120px]">
-              <AlertCircle className="h-5 w-5 text-muted-foreground/40 mb-2" />
-              <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">AD FRAME READY (HEADER)</p>
-            </div>
-          )}
-        </div>
+        <AdFrame label="Sponsored Header" />
 
         {/* ADMIN EXCLUSIVE PLAYLIST - Always at Top */}
         <div className="mb-12">
@@ -104,39 +116,16 @@ export default function Home() {
                   isFeatured={index < 3}
                 />
                 
-                {/* IN-FEED AD FRAME - Automatically placed every 3 posts for Max Revenue */}
+                {/* IN-FEED AD FRAME - Automatically placed every 3 posts */}
                 {(index + 1) % 3 === 0 && (
-                  <div className="my-12">
-                    {settings?.adsenseCode ? (
-                      <div className="p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5 transition-all hover:shadow-2xl min-h-[280px]">
-                        <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Recommended For You</p>
-                        <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
-                      </div>
-                    ) : (
-                      <div className="p-8 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center min-h-[250px]">
-                        <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">IN-FEED AD FRAME (EVERY 3 POSTS)</p>
-                      </div>
-                    )}
-                  </div>
+                  <AdFrame label="Recommended For You" />
                 )}
               </div>
             ))
           )}
         </div>
 
-        {/* BOTTOM AD FRAME - Final slot for scrolling users */}
-        <div className="my-24">
-          {settings?.adsenseCode ? (
-            <div className="p-8 bg-muted/20 rounded-[2.5rem] flex flex-col items-center border border-dashed min-h-[100px]">
-              <p className="text-[9px] font-black text-muted-foreground uppercase mb-4">Advertisement</p>
-              <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
-            </div>
-          ) : (
-            <div className="p-8 bg-muted/5 rounded-[2.5rem] border border-dotted border-muted-foreground/20 flex flex-col items-center justify-center min-h-[100px]">
-              <p className="text-[9px] font-black text-muted-foreground/20 uppercase tracking-widest">BOTTOM AD FRAME</p>
-            </div>
-          )}
-        </div>
+        <AdFrame label="Footer Advertisement" />
 
         <div className="py-24 text-center">
            <div className="flex justify-center mb-6 opacity-20"><Info className="h-12 w-12" /></div>

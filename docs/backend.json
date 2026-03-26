@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -67,11 +66,21 @@
     "providers": ["password", "google.com"]
   },
   "firestore": {
-    "structure": [
-      { "path": "/users/{userId}", "definition": { "entityName": "UserProfile" } },
-      { "path": "/posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "/videos/{videoId}", "definition": { "entityName": "Video" } },
-      { "path": "/app_settings/global", "definition": { "entityName": "AppSetting" } }
-    ]
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile document"
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "User post document"
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/Video" },
+      "description": "Curated video playlist"
+    },
+    "/app_settings/global": {
+      "schema": { "$ref": "#/entities/AppSetting" },
+      "description": "Global application settings"
+    }
   }
 }
