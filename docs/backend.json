@@ -1,10 +1,11 @@
+
 {
   "entities": {
     "UserProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user account on the 'धनधारा' platform, including their profile information, social connections, and monetization status.",
+      "description": "Represents a user account on the 'मोनेटाइजेशन' platform, including their profile information, social connections, and monetization status.",
       "properties": {
         "id": {
           "type": "string",
@@ -51,8 +52,7 @@
           "description": "The total number of followers this user has. (Denormalized count)"
         },
         "monetizationEnabled": {
-          "type": "boolean",
-          "description": "Indicates if the user has met the criteria (e.g., 1000 followers) and is enabled for monetization."
+          "boolean": "Indicates if the user has met the criteria (e.g., 1000 followers) and is enabled for monetization."
         },
         "isAdmin": {
           "type": "boolean",
@@ -329,7 +329,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
@@ -341,7 +342,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profiles. The document ID '{userId}' must match 'request.auth.uid' for writes and also serve as the 'ownerId'. Publicly readable for profile pages, writable only by the owning user. Includes denormalized 'followerCount', 'monetizationEnabled', 'isAdmin', 'isBlocked' for independent authorization and UI display."
+          "description": "Stores user profiles."
         }
       },
       {
@@ -351,7 +352,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "A collection used for database access control (DBAC). Each document represents an administrator, where the document ID '{adminId}' is the user's UID. The documents themselves can be minimal (e.g., just an 'id' field matching the document ID). This structure supports authorization independence, allowing rules to check 'request.auth.uid' against this collection to grant admin privileges without custom claims or 'get()' calls."
+          "description": "Admin users."
         }
       },
       {
@@ -361,13 +362,7 @@
           "schema": {
             "$ref": "#/backend/entities/Post"
           },
-          "description": "Stores all photo posts made by users. The 'userId' field within the document indicates the owner. Posts are publicly readable (subject to 'moderationStatus'). Writable/editable by the owner ('userId') or an administrator. Includes denormalized 'userId' (ownerId) for authorization independence, 'moderationStatus' for content visibility, and 'isFeatured' for homepage display. Photos should not be directly downloadable via 'photoUrl' but shared via post links, controlled by Firebase Storage rules.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "The unique identifier for the post."
-            }
-          ]
+          "description": "Stores all photo posts."
         }
       },
       {
@@ -377,17 +372,7 @@
           "schema": {
             "$ref": "#/backend/entities/Comment"
           },
-          "description": "Stores comments for a specific post. Writable only by the 'userId' who created the comment or an administrator. Readable by anyone who can read the parent post. Includes denormalized 'userId' (ownerId) and 'postId' for authorization independence.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "The unique identifier of the parent post."
-            },
-            {
-              "name": "commentId",
-              "description": "The unique identifier for the comment."
-            }
-          ]
+          "description": "Comments for a post."
         }
       },
       {
@@ -397,17 +382,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Represents a user's 'like' on a post. The existence of a document with ID '{userId}' signifies that this user has liked the '{postId}'. Documents can be minimal (e.g., just an 'id' or 'createdAt' field). Writable/deletable only by the '{userId}' represented by the document ID. Readable to check who liked a post. This allows for scalable like counts and efficient rule checks without large arrays, ensuring authorization independence.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "The unique identifier of the post that was liked."
-            },
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who liked the post."
-            }
-          ]
+          "description": "User likes on a post."
         }
       },
       {
@@ -417,17 +392,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Records that '{followerUserId}' is following '{followedUserId}'. The existence of a document at this path signifies the follow relationship. Documents can be minimal. Writable/deletable only by the '{followerUserId}' to establish or remove the follow. This enables scalable follower/following lists and efficient rule checks for authorization independence.",
-          "params": [
-            {
-              "name": "followedUserId",
-              "description": "The unique identifier of the user being followed."
-            },
-            {
-              "name": "followerUserId",
-              "description": "The unique identifier of the user who is following."
-            }
-          ]
+          "description": "Follow relationships."
         }
       },
       {
@@ -437,17 +402,7 @@
           "schema": {
             "$ref": "#/backend/entities/Notification"
           },
-          "description": "Stores personal notifications for a user. Owned and readable/writable only by the '{recipientId}'. The 'recipientId' from the path provides authorization independence. Includes relevant context fields like 'senderId', 'type', and 'isRead'.",
-          "params": [
-            {
-              "name": "recipientId",
-              "description": "The unique identifier of the user who is the recipient of the notification."
-            },
-            {
-              "name": "notificationId",
-              "description": "The unique identifier for the notification."
-            }
-          ]
+          "description": "User notifications."
         }
       },
       {
@@ -457,10 +412,9 @@
           "schema": {
             "$ref": "#/backend/entities/AppSetting"
           },
-          "description": "A singleton document containing global application settings and configurations. Only writable by administrators. This includes fields like 'featuredPostId', 'adsenseCodeHtml', 'privacyPolicyContent', and 'minFollowersForMonetization'. Its fixed path ensures easy access and clear security rules."
+          "description": "Global application settings."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure for 'धनधारा' is designed prioritizing Authorization Independence and secure Queryable Access Patterns (QAPs) as core principles. This ensures robust security rules that are simple to write and debug, and a scalable backend.\n\n**Authorization Independence via Denormalization:**\n1.  **User Profiles (`/users/{userId}`):** User data is stored directly at `/users/{request.auth.uid}`. The `userId` in the path directly corresponds to the authenticated user's ID, eliminating the need for `get()` calls to verify ownership for profile reads/writes.\n2.  **Admin Roles (`/admins/{adminId}`):** Instead of relying on a flag within the user profile (which would require a `get()` call), a separate top-level collection `/admins/{adminId}` is used. An admin's `uid` exists as a document ID in this collection. Security rules can check for the existence of `request.auth.uid` in this collection, fulfilling the 'Existence over Content' DBAC mandate and ensuring authorization independence for admin actions.\n3.  **Posts (`/posts/{postId}`):** Each post document includes a `userId` field, explicitly indicating the owner. This denormalized `userId` allows security rules to instantly verify ownership (`request.auth.uid == resource.data.userId`) without fetching any parent document, enabling atomic post creation and updates.\n4.  **Comments (`/posts/{postId}/comments/{commentId}`):** Similar to posts, each comment document contains its `userId` (owner) and `postId`. The `postId` is also available from the path. This denormalization means all necessary authorization context for a comment is either within the document or in its path, avoiding `get()` calls.\n5.  **Likes (`/posts/{postId}/likes/{userId}`):** The act of liking a post is represented by the existence of a document where the ID `{userId}` is the `uid` of the user who liked the post. The `postId` is available from the path. This structure inherently provides all context for authorization (`request.auth.uid == userId`) and eliminates `get()`.\n6.  **Follower/Following Relationships (`/users/{followedUserId}/followers/{followerUserId}`):** Follower relationships are established by creating a document at a specific path where both `followedUserId` and `followerUserId` are directly available in the path. This directly links the `request.auth.uid` to the action of following/unfollowing, ensuring authorization independence.\n7.  **Notifications (`/users/{recipientId}/notifications/{notificationId}`):** Notifications are strictly owned by the recipient. The `recipientId` in the path matches `request.auth.uid`, making authorization straightforward and independent.\n\n**Queryable Access Patterns (QAPs):**\n1.  **Structural Segregation:** Data is segregated into collections with homogeneous security postures. For example, all documents in `/posts` have similar public read/owner-write security needs. Private user data (e.g., notifications) resides in user-specific subcollections (`/users/{userId}/notifications`). Global settings are in a dedicated singleton path (`/app_settings/global_settings`) with admin-only write access. This prevents mixing different security requirements within a single collection, simplifying security rules and making `list` operations secure.\n2.  **Explicit Ownership and Status Fields:** Fields like `Post.userId`, `Comment.userId`, and `Post.moderationStatus` are explicitly used in documents. This allows security rules to apply fine-grained controls during `list` operations (e.g., only allowing reads for posts with `moderationStatus: 'approved'`).\n3.  **Existence-Based Authorization for Relationships:** Collections like `/posts/{postId}/likes/{userId}` and `/users/{followedUserId}/followers/{followerUserId}` are designed for efficient querying of many-to-many relationships. Listing all followers of a user or all likes for a post is efficient, and rules can directly check document existence for authorization without filtering large arrays client-side. This ensures that only authorized data is returned, adhering to QAPs."
+    ]
   }
 }
