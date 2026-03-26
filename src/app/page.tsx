@@ -10,7 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Sparkles, Star, Info, LayoutGrid } from "lucide-react"
+import { Sparkles, Star, Info, LayoutGrid, AlertCircle } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
@@ -41,19 +41,26 @@ export default function Home() {
         
         <AppDownloadBanner />
 
-        {/* TOP AD PLACEMENT - Maximum Visibility */}
-        {settings?.adsenseCode && (
-          <div className="my-8 p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center">
-             <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">Sponsored Advertisement</p>
-             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[100px]" />
-          </div>
-        )}
+        {/* TOP AD FRAME - Strategic Placement */}
+        <div className="my-8">
+          {settings?.adsenseCode ? (
+            <div className="p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center min-h-[120px]">
+               <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">Sponsored Content</p>
+               <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+            </div>
+          ) : (
+            <div className="p-6 bg-muted/20 rounded-[2.5rem] border border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[120px]">
+              <AlertCircle className="h-5 w-5 text-muted-foreground/40 mb-2" />
+              <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">AD FRAME READY (HEADER)</p>
+            </div>
+          )}
+        </div>
 
         {/* ADMIN EXCLUSIVE PLAYLIST - Always at Top */}
         <div className="mb-12">
           <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3 px-2">
             <div className="p-2.5 bg-primary/20 rounded-full shadow-lg"><Star className="text-primary h-6 w-6 fill-current" /></div>
-            मुख्य प्रस्तुतियाँ (Editor's Choice)
+            विशेष प्रस्तुतियाँ (Editor's Choice)
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
             {videosLoading ? (
@@ -62,6 +69,9 @@ export default function Home() {
               videos?.map((v: any) => (
                 <VideoCard key={v.id} id={v.id} title={v.title} videoUrl={v.videoUrl} type={v.type} />
               ))
+            )}
+            {videos?.length === 0 && !videosLoading && (
+              <p className="text-xs text-muted-foreground italic px-4">जल्द ही नए वीडियो आ रहे हैं...</p>
             )}
           </div>
         </div>
@@ -94,11 +104,19 @@ export default function Home() {
                   isFeatured={index < 3}
                 />
                 
-                {/* IN-FEED AD PLACEMENT - Every 3 posts for Max Revenue */}
-                {(index + 1) % 3 === 0 && settings?.adsenseCode && (
-                  <div className="my-12 p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5 transition-all hover:shadow-2xl">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Recommended for you</p>
-                    <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[250px]" />
+                {/* IN-FEED AD FRAME - Every 3 posts for Max Revenue */}
+                {(index + 1) % 3 === 0 && (
+                  <div className="my-12">
+                    {settings?.adsenseCode ? (
+                      <div className="p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5 transition-all hover:shadow-2xl min-h-[280px]">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Recommended For You</p>
+                        <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+                      </div>
+                    ) : (
+                      <div className="p-8 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center min-h-[250px]">
+                        <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">IN-FEED AD FRAME</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -106,13 +124,19 @@ export default function Home() {
           )}
         </div>
 
-        {/* BOTTOM AD PLACEMENT */}
-        {settings?.adsenseCode && (
-          <div className="my-24 p-8 bg-muted/20 rounded-[2.5rem] flex flex-col items-center border border-dashed">
-            <p className="text-[9px] font-black text-muted-foreground uppercase mb-4">Advertisement</p>
-            <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
-          </div>
-        )}
+        {/* BOTTOM AD FRAME */}
+        <div className="my-24">
+          {settings?.adsenseCode ? (
+            <div className="p-8 bg-muted/20 rounded-[2.5rem] flex flex-col items-center border border-dashed min-h-[100px]">
+              <p className="text-[9px] font-black text-muted-foreground uppercase mb-4">Advertisement</p>
+              <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+            </div>
+          ) : (
+            <div className="p-8 bg-muted/5 rounded-[2.5rem] border border-dotted border-muted-foreground/20 flex flex-col items-center justify-center min-h-[100px]">
+              <p className="text-[9px] font-black text-muted-foreground/20 uppercase tracking-widest">BOTTOM AD FRAME</p>
+            </div>
+          )}
+        </div>
 
         <div className="py-24 text-center">
            <div className="flex justify-center mb-6 opacity-20"><Info className="h-12 w-12" /></div>

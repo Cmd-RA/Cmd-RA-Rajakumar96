@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase } from "@/firebase"
 import { doc, setDoc, collection, query, orderBy, serverTimestamp, deleteDoc } from "firebase/firestore"
 import { 
-  Users, ShieldAlert, Code2, Save, Loader2, Video as VideoIcon, Plus, Trash2, Link as LinkIcon, Info, Play
+  Users, ShieldAlert, Code2, Save, Loader2, Video as VideoIcon, Plus, Trash2, Link as LinkIcon, Info, Play, Eraser
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -62,6 +62,22 @@ export default function AdminPage() {
       toast({ title: "सफलता", description: "AdSense कोड अपडेट कर दिया गया है।" })
     } catch (e) {
       toast({ variant: "destructive", title: "त्रुटि", description: "सेव करने में विफल।" })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const deleteAdsense = async () => {
+    setIsSaving(true)
+    try {
+      await setDoc(settingsDocRef, { 
+        adsenseCode: "", 
+        updatedAt: serverTimestamp() 
+      }, { merge: true })
+      setAdsenseCode("")
+      toast({ title: "हटाया गया", description: "AdSense कोड विज्ञापन से हटा दिया गया है।" })
+    } catch (e) {
+      toast({ variant: "destructive", title: "त्रुटि", description: "हटाने में विफल।" })
     } finally {
       setIsSaving(false)
     }
@@ -121,23 +137,29 @@ export default function AdminPage() {
           <Card className="lg:col-span-2 border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
             <CardHeader className="bg-primary/5 p-8 border-b border-primary/10">
               <CardTitle className="flex items-center gap-3 text-2xl font-black">
-                <Code2 className="text-primary h-8 w-8" /> Google AdSense विज्ञापन प्रबंधन
+                <Code2 className="text-primary h-8 w-8" /> Google AdSense कोड मैनेजर
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">गूगल एडसेंस कोड यहाँ डालें (Embed Code)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Google AdSense स्क्रिप्ट यहाँ डालें (Add/Edit Code)</label>
                 <textarea 
                   className="w-full h-64 p-6 text-sm font-mono bg-muted/30 rounded-3xl border-none focus:ring-4 ring-primary/10 outline-none resize-none"
-                  placeholder="<script async src='...'></script>"
+                  placeholder="<script async src='https://pagead2.googlesyndication.com/...'></script>"
                   value={adsenseCode}
                   onChange={(e) => setAdsenseCode(e.target.value)}
                 />
               </div>
-              <Button className="w-full h-16 rounded-[1.5rem] text-lg font-black gap-2 shadow-xl" onClick={saveAdsense} disabled={isSaving}>
-                {isSaving ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="h-6 w-6" />}
-                पूरे प्लेटफॉर्म पर विज्ञापन पब्लिश करें
-              </Button>
+              <div className="flex gap-4">
+                <Button className="flex-1 h-16 rounded-[1.5rem] text-lg font-black gap-2 shadow-xl" onClick={saveAdsense} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="h-6 w-6" />}
+                  पूरे वेबसाइट पर विज्ञापन लागू करें
+                </Button>
+                <Button variant="outline" className="h-16 px-8 rounded-[1.5rem] text-destructive font-black gap-2 border-destructive/20 hover:bg-destructive/5" onClick={deleteAdsense} disabled={isSaving}>
+                  <Eraser className="h-6 w-6" />
+                  हटाएँ
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
