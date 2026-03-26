@@ -38,24 +38,24 @@ export function NotificationPermission() {
       const { messaging } = initializeFirebase();
       if (!messaging) return;
 
-      // Register service worker if not already registered
+      // Register service worker
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         
+        // Use the provided VAPID key
         const token = await getToken(messaging, {
-          vapidKey: 'YOUR_PUBLIC_VAPID_KEY_FROM_FIREBASE_CONSOLE', // You need to get this from Firebase Console > Project Settings > Cloud Messaging
+          vapidKey: 'BIb4sp-wtFazJ82-liTgnFkmGjIcwpGHrFdOMRIAZZvN_JyD4TgGGjCh8KnEOF3q3m_GYlzqpBZD8O9gDR784YU',
           serviceWorkerRegistration: registration,
         });
 
         if (token) {
-          console.log('FCM Token received:', token);
-          // Here you would typically save this token to your user's Firestore document
+          // In a real app, you would save this token to the user's document in Firestore
+          console.log('FCM Token generated successfully:', token);
         }
       }
 
       // Handle foreground messages
       onMessage(messaging, (payload) => {
-        console.log('Foreground message received:', payload);
         toast({
           title: payload.notification?.title || 'नई सूचना',
           description: payload.notification?.body || 'आपके लिए एक नया अपडेट है!',
@@ -66,5 +66,5 @@ export function NotificationPermission() {
     }
   }
 
-  return null; // This is a utility component, it doesn't render anything UI-wise
+  return null;
 }
