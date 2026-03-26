@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Header } from "@/components/layout/header"
@@ -83,7 +84,8 @@ export default function Home() {
                 imageUrl={post.imageUrl}
                 title={post.description}
                 description="मोनेटाइजेशन पर साझा की गई एक और बेहतरीन याद। कंटेंट बनाएँ और कमाएँ!"
-                likes={Math.floor(Math.random() * 500)}
+                // Deterministic likes to avoid hydration mismatch
+                likes={(parseInt(post.id) * 157) % 500 + 50}
               />
             ))
           )}
