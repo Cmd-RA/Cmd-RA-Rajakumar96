@@ -2,419 +2,60 @@
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user account on the 'मोनेटाइजेशन' platform, including their profile information, social connections, and monetization status.",
+      "description": "Represents a user account with profile and payment details.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the user."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address, used for login (e.g., Google Login).",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The user's phone number, used for login (e.g., Mobile OTP Login)."
-        },
-        "profilePhotoUrl": {
-          "type": "string",
-          "description": "URL to the user's profile picture.",
-          "format": "uri"
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biographical description provided by the user."
-        },
-        "followerIds": {
-          "type": "array",
-          "description": "An array of UserProfile IDs that follow this user. (Relationship: UserProfile N:N UserProfile)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "followingIds": {
-          "type": "array",
-          "description": "An array of UserProfile IDs that this user is following. (Relationship: UserProfile N:N UserProfile)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "followerCount": {
-          "type": "number",
-          "description": "The total number of followers this user has. (Denormalized count)"
-        },
-        "monetizationEnabled": {
-          "boolean": "Indicates if the user has met the criteria (e.g., 1000 followers) and is enabled for monetization."
-        },
-        "isAdmin": {
-          "type": "boolean",
-          "description": "Flag indicating if this user has administrative privileges."
-        },
-        "isBlocked": {
-          "type": "boolean",
-          "description": "Flag indicating if this user has been blocked by an administrator."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the user profile was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the user profile was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "profilePhotoUrl": { "type": "string", "format": "uri" },
+        "bio": { "type": "string" },
+        "bankAccount": { "type": "string" },
+        "ifscCode": { "type": "string" },
+        "gpayNumber": { "type": "string" },
+        "followerCount": { "type": "number" },
+        "monetizationEnabled": { "type": "boolean" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "profilePhotoUrl",
-        "bio",
-        "followerIds",
-        "followingIds",
-        "followerCount",
-        "monetizationEnabled",
-        "isAdmin",
-        "isBlocked",
-        "createdAt"
-      ]
+      "required": ["id", "name", "email", "createdAt"]
     },
     "Post": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a photo post made by a user on the platform.",
+      "description": "Represents a photo post.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Post entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who created this post. (Relationship: UserProfile 1:N Post)"
-        },
-        "photoUrl": {
-          "type": "string",
-          "description": "URL to the photo content of the post.",
-          "format": "uri"
-        },
-        "title": {
-          "type": "string",
-          "description": "The title of the post."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description or caption for the post."
-        },
-        "likeIds": {
-          "type": "array",
-          "description": "An array of UserProfile IDs who have liked this post. (Relationship: UserProfile N:N Post)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "commentIds": {
-          "type": "array",
-          "description": "An array of Comment IDs associated with this post. (Relationship: Post 1:N Comment)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "isFeatured": {
-          "type": "boolean",
-          "description": "Indicates if the post has been set as a 'Top Featured Post' by an administrator."
-        },
-        "isModerated": {
-          "type": "boolean",
-          "description": "Flag indicating if the post has undergone content moderation (e.g., by AI or admin)."
-        },
-        "moderationStatus": {
-          "type": "string",
-          "description": "The current moderation status of the post (e.g., 'pending', 'approved', 'rejected', 'flagged')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the post was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the post was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "photoUrl": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "likeIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "userId",
-        "photoUrl",
-        "title",
-        "description",
-        "likeIds",
-        "commentIds",
-        "isFeatured",
-        "isModerated",
-        "moderationStatus",
-        "createdAt"
-      ]
-    },
-    "Comment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Comment",
-      "type": "object",
-      "description": "Represents a comment made by a user on a specific post.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Comment entity."
-        },
-        "postId": {
-          "type": "string",
-          "description": "Reference to the Post this comment belongs to. (Relationship: Post 1:N Comment)"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who made this comment. (Relationship: UserProfile 1:N Comment)"
-        },
-        "content": {
-          "type": "string",
-          "description": "The text content of the comment."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the comment was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the comment was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "postId",
-        "userId",
-        "content",
-        "createdAt"
-      ]
-    },
-    "Notification": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Notification",
-      "type": "object",
-      "description": "Represents a notification sent to a user about social interactions or system events.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Notification entity."
-        },
-        "recipientId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who is the recipient of this notification. (Relationship: UserProfile 1:N Notification)"
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who triggered this notification (e.g., followed, liked, commented). Optional for system notifications. (Relationship: UserProfile 1:N Notification)"
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of notification (e.g., 'follow', 'like', 'comment', 'postFlagged', 'monetizationApproved')."
-        },
-        "relatedPostId": {
-          "type": "string",
-          "description": "Reference to the Post entity related to this notification (if applicable). (Relationship: Post 1:N Notification)"
-        },
-        "relatedCommentId": {
-          "type": "string",
-          "description": "Reference to the Comment entity related to this notification (if applicable). (Relationship: Comment 1:N Notification)"
-        },
-        "isRead": {
-          "type": "boolean",
-          "description": "Indicates if the recipient has viewed this notification."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the notification was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "recipientId",
-        "type",
-        "isRead",
-        "createdAt"
-      ]
+      "required": ["id", "userId", "photoUrl", "title", "createdAt"]
     },
     "AppSetting": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AppSetting",
       "type": "object",
-      "description": "A singleton entity to store global application settings and configurations, managed by an administrator.",
+      "description": "Global settings for AdSense and moderation.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AppSetting entity. This should be a fixed value like 'global_settings' as it's a singleton."
-        },
-        "adsenseCodeHtml": {
-          "type": "string",
-          "description": "The HTML code provided by Google AdSense to be embedded in the website for displaying ads."
-        },
-        "featuredPostId": {
-          "type": "string",
-          "description": "Reference to the ID of the Post currently set as 'Top Featured' on the homepage. (Relationship: Post 1:1 AppSetting)"
-        },
-        "privacyPolicyContent": {
-          "type": "string",
-          "description": "The full content of the privacy policy, typically in HTML or Markdown format, displayed on the legal page."
-        },
-        "termsAndConditionsContent": {
-          "type": "string",
-          "description": "The full content of the terms and conditions, typically in HTML or Markdown format, displayed on the legal page."
-        },
-        "disclaimerContent": {
-          "type": "string",
-          "description": "The full content of the disclaimer, typically in HTML or Markdown format, displayed on the legal page."
-        },
-        "contactEmail": {
-          "type": "string",
-          "description": "The official email address for contact inquiries.",
-          "format": "email"
-        },
-        "contactPhone": {
-          "type": "string",
-          "description": "The official phone number for contact inquiries."
-        },
-        "aboutUsContent": {
-          "type": "string",
-          "description": "The content for the 'About Us' page, describing the platform's purpose and system."
-        },
-        "aiModerationEnabled": {
-          "type": "boolean",
-          "description": "A flag to enable or disable the AI-powered content moderation tool globally."
-        },
-        "minFollowersForMonetization": {
-          "type": "number",
-          "description": "The minimum number of followers a user needs to activate monetization."
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the application settings were last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "adsenseCodeHtml",
-        "privacyPolicyContent",
-        "termsAndConditionsContent",
-        "disclaimerContent",
-        "contactEmail",
-        "contactPhone",
-        "aboutUsContent",
-        "aiModerationEnabled",
-        "minFollowersForMonetization",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "adsenseCode": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores user profiles."
-        }
-      },
-      {
-        "path": "/admins/{adminId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Admin users."
-        }
-      },
-      {
-        "path": "/posts/{postId}",
-        "definition": {
-          "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Stores all photo posts."
-        }
-      },
-      {
-        "path": "/posts/{postId}/comments/{commentId}",
-        "definition": {
-          "entityName": "Comment",
-          "schema": {
-            "$ref": "#/backend/entities/Comment"
-          },
-          "description": "Comments for a post."
-        }
-      },
-      {
-        "path": "/posts/{postId}/likes/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "User likes on a post."
-        }
-      },
-      {
-        "path": "/users/{followedUserId}/followers/{followerUserId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Follow relationships."
-        }
-      },
-      {
-        "path": "/users/{recipientId}/notifications/{notificationId}",
-        "definition": {
-          "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
-          "description": "User notifications."
-        }
-      },
-      {
-        "path": "/app_settings/global_settings",
-        "definition": {
-          "entityName": "AppSetting",
-          "schema": {
-            "$ref": "#/backend/entities/AppSetting"
-          },
-          "description": "Global application settings."
-        }
-      }
+      { "path": "/users/{userId}", "definition": { "entityName": "UserProfile" } },
+      { "path": "/posts/{postId}", "definition": { "entityName": "Post" } },
+      { "path": "/app_settings/global", "definition": { "entityName": "AppSetting" } }
     ]
   }
 }

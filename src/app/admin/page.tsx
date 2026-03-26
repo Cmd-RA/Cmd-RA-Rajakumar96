@@ -1,135 +1,197 @@
+
 "use client"
 
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase } from "@/firebase"
+import { doc, setDoc, collection, query, limit, serverTimestamp } from "firebase/firestore"
 import { 
-  BarChart3, 
-  Users, 
-  Flag, 
-  ShieldAlert, 
-  Star, 
-  Trash2, 
-  Ban,
-  Settings2,
-  Code2
+  Users, BarChart3, ShieldAlert, Code2, Settings2, Trash2, 
+  CheckCircle2, AlertCircle, Save, Loader2 
 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 export default function AdminPage() {
-  const stats = [
-    { label: "कुल यूज़र", value: "12,450", icon: Users },
-    { label: "कुल पोस्ट", value: "45,892", icon: BarChart3 },
-    { label: "फ्लैग किए गए", value: "24", icon: ShieldAlert },
-  ]
+  const { user, isUserLoading } = useUser()
+  const db = useFirestore()
+  const { toast } = useToast()
+  const router = useRouter()
+  const [adsenseCode, setAdsenseCode] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Auth Protection: Check for specific admin email
+  useEffect(() => {
+    if (!isUserLoading && (!user || user.email !== "rajahribabakumar@gmail.com")) {
+      toast({ variant: "destructive", title: "पहुंच अस्वीकृत", description: "केवल मुख्य एडमिन ही इस पेज को देख सकता है।" })
+      router.push("/")
+    }
+  }, [user, isUserLoading, router, toast])
+
+  const settingsDocRef = useMemoFirebase(() => doc(db, "app_settings", "global"), [db])
+  const { data: settings } = useDoc(settingsDocRef)
+  
+  const usersQuery = useMemoFirebase(() => collection(db, "users"), [db])
+  const { data: allUsers } = useCollection(usersQuery)
+
+  const postsQuery = useMemoFirebase(() => collection(db, "posts"), [db])
+  const { data: allPosts } = useCollection(postsQuery)
+
+  useEffect(() => {
+    if (settings?.adsenseCode) setAdsenseCode(settings.adsenseCode)
+  }, [settings])
+
+  const saveAdsense = async () => {
+    setIsSaving(true)
+    try {
+      await setDoc(settingsDocRef, { 
+        adsenseCode, 
+        updatedAt: serverTimestamp() 
+      }, { merge: true })
+      toast({ title: "सफलता", description: "AdSense कोड सुरक्षित कर लिया गया है।" })
+    } catch (e) {
+      toast({ variant: "destructive", title: "त्रुटि", description: "सेव करने में विफल।" })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isUserLoading || !user) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      <div className="container max-w-4xl mx-auto p-4 md:pt-8">
+      <div className="container max-w-6xl mx-auto p-4 pt-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold font-headline">एडमिन कंट्रोल पैनल</h1>
-          <Badge variant="outline" className="border-primary text-primary">
-            राज कुमार
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">एडमिन डैशबोर्ड</h1>
+            <p className="text-muted-foreground">राज कुमार - मुख्य नियंत्रण केंद्र</p>
+          </div>
+          <Badge className="px-4 py-1 text-sm bg-primary/20 text-primary border-primary">
+            राज कुमार (Super Admin)
           </Badge>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {stats.map((stat, i) => (
-            <Card key={i} className="border-none shadow-sm">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-primary/10">
-                  <stat.icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{stat.label}</p>
-                  <p className="text-2xl font-bold font-headline">{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-none shadow-md bg-white">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-blue-100 text-blue-600"><Users className="h-8 w-8" /></div>
+              <div>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">कुल यूज़र</p>
+                <p className="text-3xl font-bold">{allUsers?.length || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-md bg-white">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-purple-100 text-purple-600"><BarChart3 className="h-8 w-8" /></div>
+              <div>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">कुल पोस्ट</p>
+                <p className="text-3xl font-bold">{allPosts?.length || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-md bg-white">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-orange-100 text-orange-600"><ShieldAlert className="h-8 w-8" /></div>
+              <div>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">एक्टिव मॉडरेशन</p>
+                <p className="text-3xl font-bold">सक्रिय</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="border-none shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* AdSense Manager */}
+          <Card className="border-none shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Code2 className="h-5 w-5 text-primary" />
-                AdSense इंटीग्रेशन
+              <CardTitle className="flex items-center gap-2">
+                <Code2 className="text-primary" /> Google AdSense कोड
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                यहाँ अपना Google AdSense कोड पेस्ट करें ताकि यूज़र के फीड में विज्ञापन दिख सकें।
-              </p>
               <textarea 
-                className="w-full h-32 p-3 text-xs font-mono bg-muted rounded-md border"
-                placeholder="<!-- AdSense script code here -->"
+                className="w-full h-48 p-4 text-xs font-mono bg-muted rounded-xl border focus:ring-2 ring-primary/20 outline-none"
+                placeholder="Paste your AdSense <script> here..."
+                value={adsenseCode}
+                onChange={(e) => setAdsenseCode(e.target.value)}
               />
-              <Button className="w-full">सेटिंग्स सेव करें</Button>
+              <div className="flex gap-2">
+                <Button className="flex-1 gap-2" onClick={saveAdsense} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+                  कोड सेव करें
+                </Button>
+                <Button variant="outline" className="text-destructive" onClick={() => setAdsenseCode("")}>
+                  क्लियर
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm">
+          {/* User Requests / Messages */}
+          <Card className="border-none shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Settings2 className="h-5 w-5 text-primary" />
-                प्लेटफॉर्म सेटिंग्स
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="text-primary" /> पेमेंट रिक्वेस्ट (Bank Info)
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <span className="text-sm font-medium">मुद्रीकरण (Monetization)</span>
-                <Badge className="bg-green-500">चालू</Badge>
+            <CardContent>
+              <div className="space-y-4 max-h-[300px] overflow-auto pr-2">
+                {allUsers?.filter(u => u.bankAccount).map((u: any) => (
+                  <div key={u.id} className="p-4 bg-muted/30 rounded-xl border border-border">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-bold text-sm">{u.name}</p>
+                      <Badge variant="secondary" className="text-[10px]">NEW</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Bank: {u.bankAccount}</p>
+                    <p className="text-xs text-muted-foreground">IFSC: {u.ifscCode}</p>
+                    <p className="text-xs text-muted-foreground">GPay: {u.gpayNumber}</p>
+                  </div>
+                ))}
+                {!allUsers?.some(u => u.bankAccount) && (
+                  <p className="text-center text-muted-foreground py-8">कोई नई पेमेंट रिक्वेस्ट नहीं है।</p>
+                )}
               </div>
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <span className="text-sm font-medium">AI ऑटो-मॉडरेशन</span>
-                <Badge className="bg-primary">सक्रिय</Badge>
-              </div>
-              <Button variant="outline" className="w-full">अन्य सेटिंग्स</Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Content Management Table */}
-        <Card className="border-none shadow-sm">
+        {/* User Management Table */}
+        <Card className="border-none shadow-md">
           <CardHeader>
-            <CardTitle className="text-lg">हालिया फ्लैग किए गए पोस्ट</CardTitle>
+            <CardTitle>यूज़र मैनेजमेंट</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>यूज़र</TableHead>
-                  <TableHead>कारण</TableHead>
-                  <TableHead>स्थिति</TableHead>
+                  <TableHead>नाम</TableHead>
+                  <TableHead>ईमेल</TableHead>
+                  <TableHead>मोनेटाइजेशन</TableHead>
                   <TableHead className="text-right">एक्शन</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[1, 2, 3].map((i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">यूज़र_{i}42</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">AI: स्पैम/अनुचित</TableCell>
+                {allUsers?.map((u: any) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-bold">{u.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
-                      <Badge variant="destructive" className="text-[10px]">रिव्यू की ज़रूरत</Badge>
+                      <Badge variant={u.monetizationEnabled ? "default" : "secondary"}>
+                        {u.monetizationEnabled ? "सक्रिय" : "अयोग्य"}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
-                          <Star className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Ban className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button variant="ghost" size="icon" className="text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
