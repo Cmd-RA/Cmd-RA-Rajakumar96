@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "हिमालय की सुन्दरता",
+      "imageUrl": "https://picsum.photos/seed/himalayas/800/600",
+      "imageHint": "himalayas mountain"
+    },
+    {
+      "id": "2",
+      "description": "बनारस की शाम",
+      "imageUrl": "https://picsum.photos/seed/banaras/800/600",
+      "imageHint": "india ganges"
+    },
+    {
+      "id": "3",
+      "description": "ताजमहल का अद्भुत दृश्य",
+      "imageUrl": "https://picsum.photos/seed/tajmahal/800/600",
+      "imageHint": "taj mahal"
+    },
+    {
+      "id": "4",
+      "description": "भारतीय भोजन का स्वाद",
+      "imageUrl": "https://picsum.photos/seed/indianfood/800/600",
+      "imageHint": "indian food"
+    },
+    {
+      "id": "5",
+      "description": "त्योहारों की रौनक",
+      "imageUrl": "https://picsum.photos/seed/festival/800/600",
+      "imageHint": "indian festival"
+    }
+  ]
 }
