@@ -10,7 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Sparkles, Star, Info } from "lucide-react"
+import { Sparkles, Star, Info, LayoutGrid } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
@@ -41,11 +41,11 @@ export default function Home() {
         
         <AppDownloadBanner />
 
-        {/* TOP AD PLACEMENT */}
+        {/* TOP AD PLACEMENT - Maximum Visibility */}
         {settings?.adsenseCode && (
-          <div className="my-8 p-6 bg-white rounded-3xl border border-dashed border-primary/20 shadow-sm overflow-hidden flex flex-col items-center">
-             <p className="text-[10px] font-black uppercase text-muted-foreground mb-4 tracking-widest">Sponsored Content</p>
-             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+          <div className="my-8 p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center">
+             <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">Sponsored Advertisement</p>
+             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[100px]" />
           </div>
         )}
 
@@ -53,7 +53,7 @@ export default function Home() {
         <div className="mb-12">
           <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3 px-2">
             <div className="p-2.5 bg-primary/20 rounded-full shadow-lg"><Star className="text-primary h-6 w-6 fill-current" /></div>
-            आज की मुख्य प्रस्तुतियाँ (By Admin)
+            मुख्य प्रस्तुतियाँ (Editor's Choice)
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
             {videosLoading ? (
@@ -68,10 +68,13 @@ export default function Home() {
 
         {/* FEATURED FEED - Users */}
         <div className="space-y-12">
-          <h2 className="text-2xl font-black font-headline flex items-center gap-3 px-2">
-            <div className="p-2.5 bg-yellow-400/10 rounded-full"><Sparkles className="text-yellow-600 h-6 w-6 fill-current" /></div>
-            क्रिएटर्स का संसार
-          </h2>
+          <div className="flex items-center justify-between px-2 mb-8">
+            <h2 className="text-2xl font-black font-headline flex items-center gap-3">
+              <div className="p-2.5 bg-yellow-400/10 rounded-full"><Sparkles className="text-yellow-600 h-6 w-6 fill-current" /></div>
+              कलाकारों की दुनिया
+            </h2>
+            <LayoutGrid className="text-muted-foreground h-5 w-5" />
+          </div>
           
           {postsLoading ? (
             <div className="space-y-12">
@@ -90,17 +93,26 @@ export default function Home() {
                   likeIds={post.likeIds}
                   isFeatured={index < 3}
                 />
-                {/* Ad Placements every few posts for Max Revenue */}
-                {(index + 1) % 4 === 0 && settings?.adsenseCode && (
-                  <div className="my-12 p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Advertisement</p>
-                    <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+                
+                {/* IN-FEED AD PLACEMENT - Every 3 posts for Max Revenue */}
+                {(index + 1) % 3 === 0 && settings?.adsenseCode && (
+                  <div className="my-12 p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5 transition-all hover:shadow-2xl">
+                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Recommended for you</p>
+                    <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[250px]" />
                   </div>
                 )}
               </div>
             ))
           )}
         </div>
+
+        {/* BOTTOM AD PLACEMENT */}
+        {settings?.adsenseCode && (
+          <div className="my-24 p-8 bg-muted/20 rounded-[2.5rem] flex flex-col items-center border border-dashed">
+            <p className="text-[9px] font-black text-muted-foreground uppercase mb-4">Advertisement</p>
+            <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+          </div>
+        )}
 
         <div className="py-24 text-center">
            <div className="flex justify-center mb-6 opacity-20"><Info className="h-12 w-12" /></div>

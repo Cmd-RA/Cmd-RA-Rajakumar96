@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
   Trophy, LayoutGrid, DollarSign, PlusCircle,
-  LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2
+  LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2, ShieldCheck
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -109,6 +109,7 @@ export default function ProfilePage() {
           </div>
           <h1 className="text-2xl font-bold font-headline flex items-center gap-2">
             {user.displayName || user.email?.split('@')[0]}
+            {isMonetized && <ShieldCheck className="h-5 w-5 text-primary" />}
           </h1>
           <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">@creator_{user.uid.substring(0, 6)}</p>
           
@@ -128,10 +129,10 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex gap-4 w-full px-4">
-            <Button className="flex-1 rounded-2xl h-14 font-black text-md shadow-xl gap-2" onClick={() => router.push("/upload")}>
+            <Button className="flex-1 rounded-2xl h-14 font-black text-md shadow-xl gap-2 bg-primary hover:bg-primary/90 transition-all hover:scale-[1.02]" onClick={() => router.push("/upload")}>
               <PlusCircle className="h-5 w-5" /> नई कला अपलोड करें
             </Button>
-            <Button variant="outline" className="rounded-2xl h-14 w-14" onClick={handleLogout}>
+            <Button variant="outline" className="rounded-2xl h-14 w-14 border-primary/20 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -139,14 +140,14 @@ export default function ProfilePage() {
 
         {/* Monetization Progress */}
         <div className="mt-8 space-y-6">
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden rounded-[2rem]">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2 font-black">
-                  <DollarSign className="h-5 w-5 text-primary" /> कमाई के करीब
+                <CardTitle className="text-lg flex items-center gap-2 font-black uppercase">
+                  <DollarSign className="h-5 w-5 text-primary" /> मोनेटाइजेशन प्रोग्रेस
                 </CardTitle>
                 <Badge variant={isMonetized ? "default" : "secondary"} className="rounded-full px-4">
-                  {isMonetized ? "सक्रिय (Monetized)" : "सीख रहे हैं"}
+                  {isMonetized ? "सक्रिय" : "सीख रहे हैं"}
                 </Badge>
               </div>
             </CardHeader>
@@ -155,7 +156,7 @@ export default function ProfilePage() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-4xl font-black">{followerCount}</p>
-                    <p className="text-xs text-muted-foreground font-black uppercase tracking-tighter">वर्तमान फॉलोअर्स</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">वर्तमान फॉलोअर्स</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-black text-primary">लक्ष्य: 1,000</p>
@@ -165,7 +166,7 @@ export default function ProfilePage() {
                 <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                   <AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <p className="text-[11px] font-bold text-muted-foreground leading-relaxed italic">
-                    सूचना: मुद्रीकरण के लिए 1,000 फॉलोअर्स और 100% ओरिजिनल फोटो होना अनिवार्य है।
+                    सूचना: मुद्रीकरण के लिए 1,000 फॉलोअर्स और 100% ओरिजिनल फोटो होना अनिवार्य है। गूगल एडसेंस के लिए आपका कंटेंट साफ़ होना चाहिए।
                   </p>
                 </div>
               </div>
@@ -176,7 +177,7 @@ export default function ProfilePage() {
           <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2 font-black uppercase tracking-tight">
-                <Landmark className="h-5 w-5 text-primary" /> बैंक जानकारी (पैसा प्राप्त करें)
+                <Landmark className="h-5 w-5 text-primary" /> पेमेंट सेटिंग्स (मुद्रीकरण)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -184,7 +185,7 @@ export default function ProfilePage() {
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">बैंक अकाउंट नंबर</label>
                 <Input 
                   className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
-                  placeholder="अकाउंट नंबर यहाँ डालें..." 
+                  placeholder="0000 0000 0000 0000" 
                   value={bankInfo.bankAccount}
                   onChange={(e) => setBankInfo({...bankInfo, bankAccount: e.target.value})}
                 />
@@ -193,7 +194,7 @@ export default function ProfilePage() {
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">IFSC कोड</label>
                 <Input 
                   className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
-                  placeholder="IFSC कोड यहाँ डालें..." 
+                  placeholder="SBIN0000000" 
                   value={bankInfo.ifscCode}
                   onChange={(e) => setBankInfo({...bankInfo, ifscCode: e.target.value})}
                 />
@@ -202,14 +203,14 @@ export default function ProfilePage() {
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">गूगल पे नंबर (GPay)</label>
                 <Input 
                   className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
-                  placeholder="मोबाइल नंबर..." 
+                  placeholder="+91 00000 00000" 
                   value={bankInfo.gpayNumber}
                   onChange={(e) => setBankInfo({...bankInfo, gpayNumber: e.target.value})}
                 />
               </div>
-              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-black shadow-lg" onClick={handleUpdateBank} disabled={isUpdating}>
+              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-black shadow-lg bg-primary" onClick={handleUpdateBank} disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
-                जानकारी सुरक्षित करें
+                डेटाबेस में सुरक्षित करें
               </Button>
             </CardContent>
           </Card>
@@ -220,7 +221,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-6 px-1">
             <h2 className="font-black font-headline text-2xl flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-full"><LayoutGrid className="h-5 w-5 text-primary" /></div>
-              आपकी कला गैलरी
+              आपकी गैलरी
             </h2>
           </div>
           
