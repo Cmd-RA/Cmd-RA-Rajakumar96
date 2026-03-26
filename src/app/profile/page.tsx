@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
-  Trophy, Users, Heart, LayoutGrid, DollarSign, 
+  Trophy, LayoutGrid, DollarSign, PlusCircle,
   LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation"
 import { signOut } from "firebase/auth"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser()
@@ -67,7 +68,7 @@ export default function ProfilePage() {
         ...bankInfo,
         updatedAt: serverTimestamp()
       }, { merge: true })
-      toast({ title: "सफलता", description: "आपकी पेमेंट जानकारी अपडेट कर दी गई है।" })
+      toast({ title: "सफलता", description: "पेमेंट जानकारी अपडेट कर दी गई है।" })
     } catch (e) {
       toast({ variant: "destructive", title: "त्रुटि", description: "अपडेट करने में विफल।" })
     } finally {
@@ -96,42 +97,41 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="flex flex-col items-center pt-8 pb-8 border-b">
           <div className="relative mb-4">
-            <Avatar className="h-28 w-28 ring-4 ring-primary/20 shadow-xl">
+            <Avatar className="h-32 w-32 ring-4 ring-primary/20 shadow-2xl">
               <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/200`} />
               <AvatarFallback>{user.displayName?.[0] || "U"}</AvatarFallback>
             </Avatar>
             {isMonetized && (
-              <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full border-4 border-background shadow-lg">
-                <CheckCircle2 className="h-5 w-5" />
+              <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2 rounded-full border-4 border-background shadow-lg">
+                <CheckCircle2 className="h-6 w-6" />
               </div>
             )}
           </div>
           <h1 className="text-2xl font-bold font-headline flex items-center gap-2">
             {user.displayName || user.email?.split('@')[0]}
-            {isMonetized && <Badge className="bg-primary/10 text-primary border-primary/20">Verified Artist</Badge>}
           </h1>
-          <p className="text-muted-foreground text-sm mb-6">क्रिएटर आईडी: @{user.uid.substring(0, 8)}</p>
+          <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">@creator_{user.uid.substring(0, 6)}</p>
           
-          <div className="grid grid-cols-3 gap-8 w-full mb-8">
+          <div className="grid grid-cols-3 gap-10 w-full my-8">
             <div className="text-center">
               <p className="font-black text-2xl text-primary">{posts?.length || 0}</p>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">पोस्ट</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-black">पोस्ट</p>
             </div>
             <div className="text-center border-x">
               <p className="font-black text-2xl text-primary">{followerCount}</p>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">फॉलोअर्स</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-black">फॉलोअर्स</p>
             </div>
             <div className="text-center">
               <p className="font-black text-2xl text-primary">{totalLikes}</p>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">कुल लाइक</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-black">कुल लाइक</p>
             </div>
           </div>
 
-          <div className="flex gap-3 w-full">
-            <Button className="flex-1 rounded-2xl h-12 font-bold shadow-lg" onClick={() => router.push("/upload")}>
-              नई कला जोड़ें
+          <div className="flex gap-4 w-full px-4">
+            <Button className="flex-1 rounded-2xl h-14 font-black text-md shadow-xl gap-2" onClick={() => router.push("/upload")}>
+              <PlusCircle className="h-5 w-5" /> नई कला अपलोड करें
             </Button>
-            <Button variant="outline" className="rounded-2xl h-12 w-12" onClick={handleLogout}>
+            <Button variant="outline" className="rounded-2xl h-14 w-14" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -139,84 +139,75 @@ export default function ProfilePage() {
 
         {/* Monetization Progress */}
         <div className="mt-8 space-y-6">
-          <Card className="border-none shadow-xl bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4">
-              <Trophy className={cn("h-12 w-12 opacity-10 rotate-12", isMonetized ? "text-yellow-500 opacity-30" : "text-primary")} />
-            </div>
-            <CardHeader>
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" /> मोनेटाइजेशन प्रोग्रेस
+                <CardTitle className="text-lg flex items-center gap-2 font-black">
+                  <DollarSign className="h-5 w-5 text-primary" /> कमाई के करीब
                 </CardTitle>
-                <Badge variant={isMonetized ? "default" : "secondary"} className="rounded-full">
-                  {isMonetized ? "सक्रिय (Active)" : "प्रक्रिया में"}
+                <Badge variant={isMonetized ? "default" : "secondary"} className="rounded-full px-4">
+                  {isMonetized ? "सक्रिय (Monetized)" : "सीख रहे हैं"}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-3xl font-black">{followerCount}</p>
-                    <p className="text-xs text-muted-foreground font-bold">कुल फॉलोअर्स</p>
+                    <p className="text-4xl font-black">{followerCount}</p>
+                    <p className="text-xs text-muted-foreground font-black uppercase tracking-tighter">वर्तमान फॉलोअर्स</p>
                   </div>
-                  <p className="text-xs font-bold text-primary">लक्ष्य: 1,000</p>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-primary">लक्ष्य: 1,000</p>
+                  </div>
                 </div>
-                <Progress value={progressValue} className="h-3 bg-primary/10" />
-                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                  * मोनेटाइजेशन चालू करने के लिए 1,000 फॉलोअर्स होना अनिवार्य है।
-                </p>
+                <Progress value={progressValue} className="h-4 bg-primary/10 rounded-full" />
+                <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                  <AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <p className="text-[11px] font-bold text-muted-foreground leading-relaxed italic">
+                    सूचना: मुद्रीकरण के लिए 1,000 फॉलोअर्स और 100% ओरिजिनल फोटो होना अनिवार्य है।
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Original Content Policy Notice */}
-          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-yellow-800">कंटेंट पॉलिसी</p>
-              <p className="text-[10px] text-yellow-700 mt-0.5 leading-relaxed">
-                कृपया केवल अपनी खुद की खींची हुई ओरिजिनल फोटो ही अपलोड करें। कॉपीराइटेड या इंटरनेट से उठाई गई फोटो पाए जाने पर आपका अकाउंट स्थायी रूप से बंद कर दिया जाएगा।
-              </p>
-            </div>
-          </div>
-
           {/* Payment Settings */}
-          <Card className="border-none shadow-xl rounded-[2rem]">
+          <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Landmark className="h-5 w-5 text-primary" /> पेमेंट जानकारी (Withdrawal)
+              <CardTitle className="text-lg flex items-center gap-2 font-black uppercase tracking-tight">
+                <Landmark className="h-5 w-5 text-primary" /> बैंक जानकारी (पैसा प्राप्त करें)
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">बैंक अकाउंट नंबर</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">बैंक अकाउंट नंबर</label>
                 <Input 
-                  className="rounded-xl h-12 bg-muted/50 border-none"
-                  placeholder="0000 0000 0000 0000" 
+                  className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
+                  placeholder="अकाउंट नंबर यहाँ डालें..." 
                   value={bankInfo.bankAccount}
                   onChange={(e) => setBankInfo({...bankInfo, bankAccount: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">IFSC कोड</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">IFSC कोड</label>
                 <Input 
-                  className="rounded-xl h-12 bg-muted/50 border-none"
-                  placeholder="SBIN000XXXX" 
+                  className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
+                  placeholder="IFSC कोड यहाँ डालें..." 
                   value={bankInfo.ifscCode}
                   onChange={(e) => setBankInfo({...bankInfo, ifscCode: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">गूगल पे नंबर (GPay)</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">गूगल पे नंबर (GPay)</label>
                 <Input 
-                  className="rounded-xl h-12 bg-muted/50 border-none"
-                  placeholder="+91 XXXXX XXXXX" 
+                  className="rounded-2xl h-14 bg-muted/30 border-none px-6 font-bold"
+                  placeholder="मोबाइल नंबर..." 
                   value={bankInfo.gpayNumber}
                   onChange={(e) => setBankInfo({...bankInfo, gpayNumber: e.target.value})}
                 />
               </div>
-              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-bold shadow-lg" onClick={handleUpdateBank} disabled={isUpdating}>
+              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-black shadow-lg" onClick={handleUpdateBank} disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
                 जानकारी सुरक्षित करें
               </Button>
@@ -227,28 +218,27 @@ export default function ProfilePage() {
         {/* User Gallery */}
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6 px-1">
-            <h2 className="font-black font-headline text-xl flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5 text-primary" /> आपकी गैलरी
+            <h2 className="font-black font-headline text-2xl flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-full"><LayoutGrid className="h-5 w-5 text-primary" /></div>
+              आपकी कला गैलरी
             </h2>
-            <Badge variant="outline" className="rounded-full">{posts?.length || 0} आइटम्स</Badge>
           </div>
           
           {posts && posts.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {posts.map((post: any) => (
-                <div key={post.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-2xl bg-muted shadow-md">
+                <div key={post.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-[1.5rem] bg-muted shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
                   <Image src={post.photoUrl} alt={post.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
-                    <Heart className="h-5 w-5 fill-current text-red-500 mb-1" />
-                    <span className="text-xs font-bold">{post.likeIds?.length || 0}</span>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Badge className="bg-white/20 backdrop-blur-md text-white font-black">{post.likeIds?.length || 0} Likes</Badge>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-muted/20 rounded-[3rem] border-4 border-dashed border-muted">
-              <p className="text-muted-foreground font-bold mb-4">कोई पोस्ट नहीं मिली।</p>
-              <Button onClick={() => router.push("/upload")} variant="default" className="rounded-full px-8">पहली फोटो अपलोड करें</Button>
+            <div className="text-center py-20 bg-muted/10 rounded-[3rem] border-4 border-dashed border-muted">
+              <p className="text-muted-foreground font-black mb-6 uppercase tracking-widest text-xs">अभी कोई पोस्ट नहीं है</p>
+              <Button onClick={() => router.push("/upload")} variant="secondary" className="rounded-full px-8 font-black">पहली फोटो डालें</Button>
             </div>
           )}
         </div>
