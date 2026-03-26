@@ -15,7 +15,7 @@ import { Sparkles, Star, Info, LayoutGrid, AlertCircle } from "lucide-react"
 export default function Home() {
   const db = useFirestore()
   
-  // Fetch user posts - Infinite style
+  // Fetch user posts - Optimized for infinite feel
   const postsQuery = useMemoFirebase(() => {
     if (!db) return null
     return query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100))
@@ -29,7 +29,7 @@ export default function Home() {
   }, [db])
   const { data: videos, isLoading: videosLoading } = useCollection(videosQuery)
 
-  // Get AdSense settings
+  // Get AdSense settings from DB
   const settingsRef = useMemoFirebase(() => doc(db, "app_settings", "global"), [db])
   const { data: settings } = useDoc(settingsRef)
 
@@ -41,7 +41,7 @@ export default function Home() {
         
         <AppDownloadBanner />
 
-        {/* TOP AD FRAME - Strategic Placement */}
+        {/* TOP AD FRAME - High Visibility for AdSense Bots */}
         <div className="my-8">
           {settings?.adsenseCode ? (
             <div className="p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center min-h-[120px]">
@@ -76,7 +76,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* FEATURED FEED - Users */}
+        {/* FEATURED FEED - Users Posts with Strategic Ad Frames */}
         <div className="space-y-12">
           <div className="flex items-center justify-between px-2 mb-8">
             <h2 className="text-2xl font-black font-headline flex items-center gap-3">
@@ -104,7 +104,7 @@ export default function Home() {
                   isFeatured={index < 3}
                 />
                 
-                {/* IN-FEED AD FRAME - Every 3 posts for Max Revenue */}
+                {/* IN-FEED AD FRAME - Automatically placed every 3 posts for Max Revenue */}
                 {(index + 1) % 3 === 0 && (
                   <div className="my-12">
                     {settings?.adsenseCode ? (
@@ -114,7 +114,7 @@ export default function Home() {
                       </div>
                     ) : (
                       <div className="p-8 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center min-h-[250px]">
-                        <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">IN-FEED AD FRAME</p>
+                        <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">IN-FEED AD FRAME (EVERY 3 POSTS)</p>
                       </div>
                     )}
                   </div>
@@ -124,7 +124,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* BOTTOM AD FRAME */}
+        {/* BOTTOM AD FRAME - Final slot for scrolling users */}
         <div className="my-24">
           {settings?.adsenseCode ? (
             <div className="p-8 bg-muted/20 rounded-[2.5rem] flex flex-col items-center border border-dashed min-h-[100px]">
