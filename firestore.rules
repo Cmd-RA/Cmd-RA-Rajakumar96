@@ -17,8 +17,13 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // For liking
+      allow update: if isSignedIn(); // For liking and following updates
       allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /app_settings/{docId} {
