@@ -10,18 +10,15 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Button } from "@/components/ui/button"
-import { PlusSquare, TrendingUp, Sparkles, Star, Info } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Sparkles, Star, Info } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
-  const router = useRouter()
   
   // Fetch user posts - Infinite style
   const postsQuery = useMemoFirebase(() => {
     if (!db) return null
-    return query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50))
+    return query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100))
   }, [db])
   const { data: realPosts, isLoading: postsLoading } = useCollection(postsQuery)
 
@@ -40,19 +37,11 @@ export default function Home() {
     <div className="min-h-screen pb-20 md:pb-0 bg-background/30">
       <Header />
       
-      {/* Floating Upload - Quick Access */}
-      <Button 
-        onClick={() => router.push("/upload")}
-        className="fixed bottom-24 right-6 z-50 rounded-full h-16 w-16 shadow-2xl md:bottom-8 md:right-8 bg-primary hover:bg-primary/90"
-      >
-        <PlusSquare className="h-8 w-8 text-white" />
-      </Button>
-
       <div className="container max-w-2xl mx-auto px-4 pt-8">
         
         <AppDownloadBanner />
 
-        {/* TOP AD PLACEMENT - Approval Critical */}
+        {/* TOP AD PLACEMENT */}
         {settings?.adsenseCode && (
           <div className="my-8 p-6 bg-white rounded-3xl border border-dashed border-primary/20 shadow-sm overflow-hidden flex flex-col items-center">
              <p className="text-[10px] font-black uppercase text-muted-foreground mb-4 tracking-widest">Sponsored Content</p>
@@ -60,11 +49,11 @@ export default function Home() {
           </div>
         )}
 
-        {/* ADMIN EXCLUSIVE PLAYLIST - Top Bar */}
+        {/* ADMIN EXCLUSIVE PLAYLIST - Always at Top */}
         <div className="mb-12">
           <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3 px-2">
             <div className="p-2.5 bg-primary/20 rounded-full shadow-lg"><Star className="text-primary h-6 w-6 fill-current" /></div>
-            आज की मुख्य प्रस्तुतियाँ
+            आज की मुख्य प्रस्तुतियाँ (By Admin)
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
             {videosLoading ? (
@@ -99,13 +88,13 @@ export default function Home() {
                   title={post.title}
                   description={post.description}
                   likeIds={post.likeIds}
-                  isFeatured={index === 0}
+                  isFeatured={index < 3}
                 />
-                {/* Insert Ads every few posts for revenue */}
-                {(index + 1) % 5 === 0 && settings?.adsenseCode && (
+                {/* Ad Placements every few posts for Max Revenue */}
+                {(index + 1) % 4 === 0 && settings?.adsenseCode && (
                   <div className="my-12 p-8 bg-white rounded-[2.5rem] shadow-xl flex flex-col items-center border border-primary/5">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-4">Advertisement</p>
-                    <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} />
+                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-4 tracking-tighter">Advertisement</p>
+                    <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
                   </div>
                 )}
               </div>
