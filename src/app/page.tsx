@@ -39,19 +39,21 @@ export default function Home() {
   const { data: settings } = useDoc(settingsRef)
 
   const AdFrame = ({ label }: { label: string }) => {
-    if (!isMounted) return <div className="min-h-[100px]" />
+    if (!isMounted) return <div className="min-h-[120px] my-8 bg-muted/5 animate-pulse rounded-[2.5rem]" />
     
     return (
-      <div className="my-8">
+      <div className="my-10 w-full px-2">
         {settings?.adsenseCode ? (
-          <div className="p-6 bg-white rounded-[2.5rem] border border-primary/5 shadow-sm overflow-hidden flex flex-col items-center min-h-[120px]">
-             <p className="text-[9px] font-black uppercase text-muted-foreground mb-4 tracking-[0.2em]">{label}</p>
-             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+          <div className="p-8 bg-white rounded-[2.5rem] border border-primary/10 shadow-xl overflow-hidden flex flex-col items-center min-h-[150px] transition-all hover:shadow-2xl">
+             <p className="text-[9px] font-black uppercase text-muted-foreground mb-6 tracking-[0.3em] flex items-center gap-2">
+               <span className="h-1 w-1 bg-primary rounded-full" /> Google Sponsored Ad <span className="h-1 w-1 bg-primary rounded-full" />
+             </p>
+             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[100px]" />
           </div>
         ) : (
-          <div className="p-6 bg-muted/20 rounded-[2.5rem] border border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[120px]">
-            <AlertCircle className="h-5 w-5 text-muted-foreground/40 mb-2" />
-            <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">AD FRAME READY ({label})</p>
+          <div className="p-8 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center min-h-[150px]">
+            <AlertCircle className="h-6 w-6 text-muted-foreground/20 mb-3" />
+            <p className="text-[10px] font-black uppercase text-muted-foreground/30 tracking-widest">Ad Slot Ready: {label}</p>
           </div>
         )}
       </div>
@@ -59,48 +61,54 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 bg-background/30">
+    <div className="min-h-screen pb-20 md:pb-0 bg-background/50">
       <Header />
       
       <div className="container max-w-2xl mx-auto px-4 pt-8">
         
         <AppDownloadBanner />
 
-        <AdFrame label="Sponsored Header" />
+        {/* Global Top Ad */}
+        <AdFrame label="Header Banner Ad" />
 
         {/* ADMIN EXCLUSIVE PLAYLIST - Always at Top */}
         <div className="mb-12">
           <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3 px-2">
-            <div className="p-2.5 bg-primary/20 rounded-full shadow-lg"><Star className="text-primary h-6 w-6 fill-current" /></div>
-            विशेष प्रस्तुतियाँ (Editor's Choice)
+            <div className="p-3 bg-primary/20 rounded-2xl shadow-lg rotate-3"><Star className="text-primary h-7 w-7 fill-current" /></div>
+            विशेष प्रस्तुतियाँ (Top Pick)
           </h2>
-          <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
+          <div className="flex gap-5 overflow-x-auto pb-8 no-scrollbar snap-x">
             {videosLoading ? (
-              [1, 2].map(i => <Skeleton key={i} className="min-w-[300px] h-[200px] rounded-[2.5rem]" />)
+              [1, 2].map(i => <Skeleton key={i} className="min-w-[320px] h-[220px] rounded-[3rem]" />)
             ) : (
               videos?.map((v: any) => (
                 <VideoCard key={v.id} id={v.id} title={v.title} videoUrl={v.videoUrl} type={v.type} />
               ))
             )}
             {videos?.length === 0 && !videosLoading && (
-              <p className="text-xs text-muted-foreground italic px-4">जल्द ही नए वीडियो आ रहे हैं...</p>
+              <div className="px-6 py-12 bg-muted/20 rounded-[2.5rem] border border-dashed w-full text-center">
+                <p className="text-xs text-muted-foreground italic font-bold">जल्द ही नए वीडियो आ रहे हैं...</p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* FEATURED FEED - Users Posts with Strategic Ad Frames */}
-        <div className="space-y-12">
+        {/* Mid-Playlist Ad */}
+        <AdFrame label="After Playlist Ad" />
+
+        {/* FEATURED FEED - Users Posts with Strategic Ad Frames Every 2-3 Posts */}
+        <div className="space-y-12 mb-12">
           <div className="flex items-center justify-between px-2 mb-8">
             <h2 className="text-2xl font-black font-headline flex items-center gap-3">
-              <div className="p-2.5 bg-yellow-400/10 rounded-full"><Sparkles className="text-yellow-600 h-6 w-6 fill-current" /></div>
+              <div className="p-3 bg-yellow-400/10 rounded-2xl -rotate-3"><Sparkles className="text-yellow-600 h-7 w-7 fill-current" /></div>
               कलाकारों की दुनिया
             </h2>
-            <LayoutGrid className="text-muted-foreground h-5 w-5" />
+            <div className="p-2 bg-muted/20 rounded-full"><LayoutGrid className="text-muted-foreground h-5 w-5" /></div>
           </div>
           
           {postsLoading ? (
             <div className="space-y-12">
-              {[1, 2].map(i => <Skeleton key={i} className="h-[500px] w-full rounded-[3rem]" />)}
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-[550px] w-full rounded-[3.5rem]" />)}
             </div>
           ) : (
             realPosts?.map((post: any, index: number) => (
@@ -113,24 +121,25 @@ export default function Home() {
                   title={post.title}
                   description={post.description}
                   likeIds={post.likeIds}
-                  isFeatured={index < 3}
+                  isFeatured={index < 5}
                 />
                 
-                {/* IN-FEED AD FRAME - Automatically placed every 3 posts */}
-                {(index + 1) % 3 === 0 && (
-                  <AdFrame label="Recommended For You" />
+                {/* STRATEGIC IN-FEED ADS: Shows every 2 posts for high visibility */}
+                {(index + 1) % 2 === 0 && (
+                  <AdFrame label={`Feed Slot ${Math.floor(index / 2) + 1}`} />
                 )}
               </div>
             ))
           )}
         </div>
 
-        <AdFrame label="Footer Advertisement" />
+        {/* Infinite Scroll Bottom Ad */}
+        <AdFrame label="Footer Content Ad" />
 
-        <div className="py-24 text-center">
-           <div className="flex justify-center mb-6 opacity-20"><Info className="h-12 w-12" /></div>
-           <p className="text-xs text-muted-foreground font-black uppercase tracking-[0.5em]">
-             कला की कोई सीमा नहीं होती ✨
+        <div className="py-32 text-center">
+           <div className="flex justify-center mb-8 opacity-10 animate-bounce"><Info className="h-16 w-16" /></div>
+           <p className="text-xs text-muted-foreground font-black uppercase tracking-[0.8em] px-4 leading-loose">
+             कला और कमाई का संगम ✨
            </p>
         </div>
       </div>
