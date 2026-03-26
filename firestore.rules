@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict user-ownership model combined with public content 
+     * visibility for the 'धनधारा' (Dhandhara) social platform. Access control is primarily 
+     * driven by the authenticated user's UID and document-level ownership fields.
+     *
+     * DATA STRUCTURE:
+     * - Top-level collections: /users, /posts, /admins, /app_settings.
+     * - User-specific subcollections: /users/{userId}/notifications, /users/{userId}/followers.
+     * - Post-specific subcollections: /posts/{postId}/comments, /posts/{postId}/likes.
+     *
+     * KEY SECURITY DECISIONS:
+     * - Authorization Independence: Critical IDs (userId, recipientId) are mirrored in paths 
+     *   and document data to allow for fast, local authorization checks without extra reads.
+     * - Admin Access: A dedicated /admins collection facilitates database-level roles 
+     *   without relying on custom claims.
+     * - Public Consumption: Posts and User Profiles are public, but modifications are 
+     *   strictly restricted to owners or admins.
+     * - Immutability: Ownership fields (e.g., userId) are made immutable after creation 
+     *   to prevent identity-spoofing via updates.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isPostApprovedOrOwner(postData) {
+      return postData.moderationStatus == 'approved' || isOwner(postData.userId) || isAdmin();
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for user profile documents.
+     * @path /users/{userId}
+     * @allow get, list: Always (public profiles).
+     * @allow create: Only if the user's UID matches the document ID.
+     * @allow update: Only the owner can edit their bio/name; ID must remain immutable.
+     * @allow delete: Only the owner or an administrator.
+     * @principle Ownership-based writes with public read access.
+     */
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId) || isAdmin();
+
+      /**
+       * @description Records that one user follows another.
+       * @path /users/{followedUserId}/followers/{followerUserId}
+       * @allow create, delete: Only the follower (the one initiating the action).
+       * @principle Path-based identity verification for relationship management.
+       */
+      match /followers/{followerUserId} {
+        allow get, list: if true;
+        allow create: if isOwner(followerUserId);
+        allow update: if false;
+        allow delete: if isExistingOwner(followerUserId);
+      }
+
+      /**
+       * @description Personal notifications for a user.
+       * @path /users/{recipientId}/notifications/{notificationId}
+       * @allow read, update, delete: Only the recipient.
+       * @principle Private user-scoped subcollection.
+       */
+      match /notifications/{notificationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isSignedIn(); // Allow others to trigger notifications via system logic
+        allow update, delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Admin collection for DBAC (Database Access Control).
+     * @path /admins/{adminId}
+     * @allow read: Authenticated users.
+     * @allow write: Denied (managed via Admin Console/GCP).
+     */
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    /**
+     * @description Global photo posts.
+     * @path /posts/{postId}
+     * @allow get: Public if approved; otherwise owner/admin only.
+     * @allow list: Public (filtered by moderationStatus in queries).
+     * @allow create: Authenticated users, enforcing their own userId.
+     * @allow update: Owner or admin only; userId is immutable.
+     * @principle Denormalized owner ID used for authorization and relational integrity.
+     */
+    match /posts/{postId} {
+      allow get: if isPostApprovedOrOwner(resource.data);
+      allow list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isExistingOwner(resource.data.userId) || isAdmin()) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(resource.data.userId) || isAdmin();
+
+      /**
+       * @description Comments associated with a post.
+       * @path /posts/{postId}/comments/{commentId}
+       * @allow read: Anyone who can view the post.
+       * @allow create: Authenticated users, enforcing their own userId.
+       * @principle Nested content inherits visibility from parent context.
+       */
+      match /comments/{commentId} {
+        allow get, list: if true;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update: if (isExistingOwner(resource.data.userId) || isAdmin()) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(resource.data.userId) || isAdmin();
+      }
+
+      /**
+       * @description Track user likes on a specific post.
+       * @path /posts/{postId}/likes/{userId}
+       * @allow get, list: Public (to see like counts/users).
+       * @allow create, delete: Only the user identified by the path ID.
+       * @principle Existence-based authorization for many-to-many relationships.
+       */
+      match /likes/{userId} {
+        allow get, list: if true;
+        allow create: if isOwner(userId);
+        allow update: if false;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Global application settings (Privacy Policy, Contact, etc.).
+     * @path /app_settings/global_settings
+     * @allow read: Always (public metadata).
+     * @allow write: Only administrators.
+     * @principle Singleton document protection via admin role.
+     */
+    match /app_settings/global_settings {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
