@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { suggestPhotoContent } from "@/ai/flows/post-caption-and-title-generation"
 import { moderateContent } from "@/ai/flows/ai-powered-content-moderation"
 import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
@@ -20,7 +19,6 @@ export default function UploadPage() {
   const [image, setImage] = useState<string | null>(null)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [isGenerating, setIsGenerating] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [activeField, setActiveField] = useState<"title" | "description" | null>(null)
@@ -30,85 +28,85 @@ export default function UploadPage() {
   const db = useFirestore()
   const { user } = useUser()
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image Compression to save Firebase space (Keep it free!)
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.src = base64Str
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 800
+        const scaleSize = MAX_WIDTH / img.width
+        canvas.width = MAX_WIDTH
+        canvas.height = img.height * scaleSize
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.7)) // 70% quality jpeg
+      }
+    })
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onloadend = () => setImage(reader.result as string)
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string)
+        setImage(compressed)
+      }
       reader.readAsDataURL(file)
     }
   }
 
-  // Voice to Text Feature
   const startListening = (field: "title" | "description") => {
     if (!('webkitSpeechRecognition' in window)) {
-      toast({ variant: "destructive", title: "सॉरी", description: "आपका ब्राउज़र वॉइस टाइपिंग सपोर्ट नहीं करता।" })
+      toast({ variant: "destructive", title: "सॉरी", description: "वॉइस टाइपिंग सपोर्ट नहीं है।" })
       return
     }
-
     const recognition = new (window as any).webkitSpeechRecognition()
     recognition.lang = 'hi-IN'
-    recognition.continuous = false
-    recognition.interimResults = false
-
-    recognition.onstart = () => {
-      setIsListening(true)
-      setActiveField(field)
-    }
-
+    recognition.onstart = () => { setIsListening(true); setActiveField(field) }
     recognition.onresult = (event: any) => {
       const text = event.results[0][0].transcript
       if (field === "title") setTitle(prev => prev + " " + text)
       else setDescription(prev => prev + " " + text)
     }
-
-    recognition.onerror = () => setIsListening(false)
-    recognition.onend = () => {
-      setIsListening(false)
-      setActiveField(null)
-    }
-
+    recognition.onend = () => { setIsListening(false); setActiveField(null) }
     recognition.start()
   }
 
   const handlePost = async () => {
-    if (!user) {
-      toast({ variant: "destructive", title: "लॉगिन आवश्यक", description: "पोस्ट करने के लिए कृपया लॉगिन करें।" })
-      router.push("/login")
-      return
-    }
-
+    if (!user) { router.push("/login"); return }
     if (!image || !title || !description) {
-      toast({ variant: "destructive", title: "अधूरा कंटेंट", description: "कृपया फोटो, शीर्षक और विवरण भरें।" })
+      toast({ variant: "destructive", title: "अधूरा कंटेंट", description: "कृपया फोटो और जानकारी भरें।" })
       return
     }
 
     setIsPosting(true)
     try {
+      // Content Moderation via Genkit
       const moderation = await moderateContent({ photoDataUri: image, title, description })
-
       if (!moderation.isAppropriate) {
-        toast({ variant: "destructive", title: "ब्लॉक किया गया", description: moderation.reason || "नियमों के खिलाफ कंटेंट।" })
+        toast({ variant: "destructive", title: "ब्लॉक किया गया", description: moderation.reason })
+        setIsPosting(false)
         return
       }
 
       const postsRef = collection(db, "posts")
-      addDocumentNonBlocking(postsRef, {
+      await addDocumentNonBlocking(postsRef, {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0],
         photoUrl: image,
         title,
         description,
         likeIds: [],
-        commentIds: [],
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
       })
       
       toast({ title: "सफलता!", description: "आपकी पोस्ट पब्लिश हो गई है।" })
       router.push("/")
     } catch (error) {
-      toast({ variant: "destructive", title: "त्रुटि", description: "पोस्ट अपलोड करने में समस्या आई।" })
+      toast({ variant: "destructive", title: "त्रुटि", description: "अपलोड में समस्या आई।" })
     } finally {
       setIsPosting(false)
     }
@@ -118,70 +116,69 @@ export default function UploadPage() {
     <div className="min-h-screen bg-background pb-20">
       <Header />
       <div className="container max-w-xl mx-auto p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold font-headline">नया पोस्ट</h1>
-          <Button variant="ghost" size="icon" onClick={() => router.push("/")} className="rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </Button>
-        </div>
+        <h1 className="text-2xl font-black font-headline mb-6">नया पोस्ट बनाएँ</h1>
         
         <div className="space-y-6">
           <div 
-            className="relative aspect-square w-full rounded-3xl border-2 border-dashed border-muted-foreground/20 bg-muted/30 flex items-center justify-center overflow-hidden cursor-pointer group hover:border-primary/50 transition-all shadow-inner"
+            className="relative aspect-square w-full rounded-[2.5rem] border-4 border-dashed border-primary/20 bg-muted/30 flex items-center justify-center overflow-hidden cursor-pointer hover:bg-muted/50 transition-all shadow-xl"
             onClick={() => document.getElementById("imageInput")?.click()}
           >
             {image ? (
               <img src={image} alt="Preview" className="w-full h-full object-cover" />
             ) : (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground group-hover:text-primary">
-                <div className="p-4 bg-background rounded-2xl shadow-sm"><ImageIcon className="h-10 w-10" /></div>
-                <span className="font-bold">फोटो यहाँ अपलोड करें</span>
+              <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <div className="p-6 bg-white rounded-3xl shadow-lg text-primary"><ImageIcon className="h-12 w-12" /></div>
+                <span className="font-black uppercase tracking-widest text-xs">फोटो चुनें (गैलरी)</span>
               </div>
             )}
             <input id="imageInput" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
           </div>
 
-          <div className="space-y-5">
-            <div className="space-y-2 relative">
-              <label className="text-sm font-bold flex items-center gap-2">
-                शीर्षक (Title)
-                <button 
+          <div className="space-y-4">
+            <div className="relative">
+              <label className="text-[10px] font-black uppercase tracking-widest ml-2 mb-2 block">शीर्षक (Title)</label>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="एक शानदार नाम दें..." 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-14 rounded-2xl border-none bg-white shadow-sm font-bold"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={cn("h-14 w-14 rounded-2xl shrink-0", isListening && activeField === "title" && "bg-red-500 text-white animate-pulse")}
                   onClick={() => startListening("title")}
-                  className={cn("p-1.5 rounded-full transition-colors", isListening && activeField === "title" ? "bg-red-500 text-white animate-pulse" : "bg-primary/10 text-primary")}
                 >
-                  {isListening && activeField === "title" ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </button>
-              </label>
-              <Input 
-                placeholder="क्या हो रहा है?" 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="h-12 rounded-xl"
-              />
+                  <Mic className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
             
-            <div className="space-y-2 relative">
-              <label className="text-sm font-bold flex items-center gap-2">
-                विवरण (Description)
-                <button 
+            <div className="relative">
+              <label className="text-[10px] font-black uppercase tracking-widest ml-2 mb-2 block">विवरण (Description)</label>
+              <div className="flex gap-2">
+                <Textarea 
+                  placeholder="इस कला के पीछे की कहानी..." 
+                  rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="rounded-2xl border-none bg-white shadow-sm font-medium resize-none"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={cn("h-14 w-14 rounded-2xl shrink-0 mt-auto", isListening && activeField === "description" && "bg-red-500 text-white animate-pulse")}
                   onClick={() => startListening("description")}
-                  className={cn("p-1.5 rounded-full transition-colors", isListening && activeField === "description" ? "bg-red-500 text-white animate-pulse" : "bg-primary/10 text-primary")}
                 >
-                  {isListening && activeField === "description" ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </button>
-              </label>
-              <Textarea 
-                placeholder="अपनी कहानी यहाँ लिखें..." 
-                rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="rounded-xl resize-none"
-              />
+                  <Mic className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
 
           <Button 
-            className="w-full h-14 text-lg font-bold gap-2 rounded-2xl shadow-xl transition-all active:scale-95"
+            className="w-full h-16 text-lg font-black rounded-[2rem] shadow-2xl gap-3 bg-primary hover:bg-primary/90 transition-transform active:scale-95"
             disabled={isPosting || !image}
             onClick={handlePost}
           >
@@ -189,10 +186,10 @@ export default function UploadPage() {
             पब्लिश करें
           </Button>
           
-          <div className="p-4 bg-primary/5 rounded-2xl flex items-start gap-3 border border-primary/10">
-            <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <strong>मोनेटाइजेशन सुरक्षा:</strong> आपकी फोटो को सीधे डाउनलोड नहीं किया जा सकता। एडमिन पैनल द्वारा इसे ट्रैक किया जाता है।
+          <div className="p-5 bg-yellow-400/10 rounded-3xl flex items-start gap-4 border border-yellow-400/20">
+            <ShieldAlert className="h-6 w-6 text-yellow-600 shrink-0" />
+            <p className="text-[11px] font-bold text-yellow-800 leading-relaxed italic">
+              <strong>महत्वपूर्ण:</strong> केवल ओरिजिनल फोटो ही अपलोड करें। चोरी की गई फोटो पाए जाने पर अकाउंट मोनेटाइज नहीं होगा।
             </p>
           </div>
         </div>
