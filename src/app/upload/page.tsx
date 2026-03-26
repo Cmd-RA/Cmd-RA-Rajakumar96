@@ -2,16 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Camera, Image as ImageIcon, Sparkles, Send, ShieldAlert, Loader2 } from "lucide-react"
+import { Image as ImageIcon, Sparkles, Send, ShieldAlert, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { suggestPhotoContent } from "@/ai/flows/post-caption-and-title-generation"
 import { moderateContent } from "@/ai/flows/ai-powered-content-moderation"
 import { useToast } from "@/hooks/use-toast"
+import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
+import { collection, serverTimestamp } from "firebase/firestore"
 
 export default function UploadPage() {
   const [image, setImage] = useState<string | null>(null)
@@ -21,6 +22,8 @@ export default function UploadPage() {
   const [isPosting, setIsPosting] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const db = useFirestore()
+  const { user } = useUser()
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -59,6 +62,16 @@ export default function UploadPage() {
   }
 
   const handlePost = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "लॉगिन आवश्यक",
+        description: "पोस्ट करने के लिए कृपया लॉगिन करें।",
+      })
+      router.push("/login")
+      return
+    }
+
     if (!image || !title || !description) {
       toast({
         variant: "destructive",
@@ -86,8 +99,22 @@ export default function UploadPage() {
         return
       }
 
-      // Simulate post upload
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Save to Firestore
+      const postsRef = collection(db, "posts")
+      addDocumentNonBlocking(postsRef, {
+        userId: user.uid,
+        userName: user.displayName || user.email?.split('@')[0],
+        photoUrl: image, // In production, upload to Storage and get URL
+        title,
+        description,
+        likeIds: [],
+        commentIds: [],
+        isFeatured: false,
+        isModerated: true,
+        moderationStatus: "approved",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      })
       
       toast({
         title: "सफलता!",
@@ -179,7 +206,7 @@ export default function UploadPage() {
           <div className="p-4 bg-muted/50 rounded-xl flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground leading-relaxed">
-              आपकी पोस्ट का AI द्वारा स्वचालित रूप से मॉडरेशन किया जाएगा। अभद्र भाषा या अनुचित सामग्री पाए जाने पर पोस्ट ब्लॉक की जा सकती है।
+              सुरक्षा नियम: आपकी तस्वीरों को सीधे डाउनलोड से सुरक्षित रखा गया है। आप इन्हें केवल सोशल प्लेटफॉर्म्स पर शेयर कर सकते हैं।
             </p>
           </div>
         </div>
