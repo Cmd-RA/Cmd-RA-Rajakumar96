@@ -37,6 +37,21 @@
       },
       "required": ["id", "userId", "photoUrl", "title", "createdAt"]
     },
+    "Video": {
+      "title": "Video",
+      "type": "object",
+      "description": "Represents a video post or link.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "videoUrl": { "type": "string", "format": "uri" },
+        "thumbnailUrl": { "type": "string", "format": "uri" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["youtube", "direct"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "videoUrl", "type", "createdAt"]
+    },
     "AppSetting": {
       "title": "AppSetting",
       "type": "object",
@@ -55,6 +70,7 @@
     "structure": [
       { "path": "/users/{userId}", "definition": { "entityName": "UserProfile" } },
       { "path": "/posts/{postId}", "definition": { "entityName": "Post" } },
+      { "path": "/videos/{videoId}", "definition": { "entityName": "Video" } },
       { "path": "/app_settings/global", "definition": { "entityName": "AppSetting" } }
     ]
   }
