@@ -1,15 +1,55 @@
+"use client"
+
 import { Header } from "@/components/layout/header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Users, Heart, LayoutGrid, DollarSign, ArrowRight } from "lucide-react"
-import { PlaceHolderImages } from "@/lib/placeholder-images"
+import { Trophy, Users, Heart, LayoutGrid, DollarSign, ArrowRight, LogOut, Loader2 } from "lucide-react"
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from "@/firebase"
+import { collection, query, where, orderBy } from "firebase/firestore"
+import { useRouter } from "next/navigation"
+import { signOut } from "firebase/auth"
+import Image from "next/image"
 
 export default function ProfilePage() {
-  const followers = 1250
+  const { user, isUserLoading } = useUser()
+  const db = useFirestore()
+  const auth = useAuth()
+  const router = useRouter()
+
+  const userPostsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return query(
+      collection(db, "posts"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    )
+  }, [db, user])
+
+  const { data: posts, isLoading: isPostsLoading } = useCollection(userPostsQuery)
+
+  const followers = 0 // In real app, fetch from /users/{uid}/followers
   const isMonetized = followers >= 1000
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push("/login")
+  }
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    router.push("/login")
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -18,15 +58,15 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="flex flex-col items-center pt-4 pb-8 border-b">
           <Avatar className="h-24 w-24 ring-4 ring-primary/10 mb-4">
-            <AvatarImage src="https://picsum.photos/seed/myprofile/200" alt="Username" />
-            <AvatarFallback>यू</AvatarFallback>
+            <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/200`} alt={user.displayName || "User"} />
+            <AvatarFallback>{user.displayName?.[0] || user.email?.[0] || "U"}</AvatarFallback>
           </Avatar>
-          <h1 className="text-2xl font-bold font-headline">राहुल कुमार</h1>
-          <p className="text-muted-foreground text-sm mb-4">डिजिटल क्रिएटर | फोटोग्राफी प्रेमी 📸</p>
+          <h1 className="text-2xl font-bold font-headline">{user.displayName || user.email?.split('@')[0]}</h1>
+          <p className="text-muted-foreground text-sm mb-4">डिजिटल क्रिएटर | मोनेटाइजेशन यूज़र 📸</p>
           
           <div className="flex gap-8 mb-6">
             <div className="text-center">
-              <p className="font-bold text-lg leading-none">42</p>
+              <p className="font-bold text-lg leading-none">{posts?.length || 0}</p>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">पोस्ट</p>
             </div>
             <div className="text-center">
@@ -34,14 +74,16 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">फॉलोअर्स</p>
             </div>
             <div className="text-center">
-              <p className="font-bold text-lg leading-none">156</p>
+              <p className="font-bold text-lg leading-none">0</p>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">फॉलोइंग</p>
             </div>
           </div>
 
           <div className="flex gap-2 w-full">
-            <Button className="flex-1">प्रोफ़ाइल एडिट करें</Button>
-            <Button variant="outline" className="flex-1">शेयर करें</Button>
+            <Button className="flex-1" variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> लॉगआउट
+            </Button>
+            <Button variant="outline" className="flex-1">प्रोफ़ाइल शेयर करें</Button>
           </div>
         </div>
 
@@ -72,11 +114,6 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            {isMonetized && (
-              <Button variant="link" className="p-0 h-auto mt-4 text-primary text-sm font-bold flex items-center gap-1">
-                पेआउट विवरण देखें <ArrowRight className="h-3 w-3" />
-              </Button>
-            )}
           </CardContent>
         </Card>
 
@@ -86,23 +123,38 @@ export default function ProfilePage() {
             <LayoutGrid className="h-5 w-5" />
             <h2 className="font-bold">आपकी पोस्ट्स</h2>
           </div>
-          <div className="grid grid-cols-3 gap-1 md:gap-2">
-            {[...PlaceHolderImages, ...PlaceHolderImages].map((post, idx) => (
-              <div key={idx} className="aspect-square relative group cursor-pointer overflow-hidden rounded-md bg-muted">
-                <img 
-                  src={post.imageUrl} 
-                  alt={post.description} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-4 w-4 fill-current" />
-                    <span className="text-xs font-bold">42</span>
+          
+          {isPostsLoading ? (
+            <div className="grid grid-cols-3 gap-1 animate-pulse">
+              {[1, 2, 3].map(i => <div key={i} className="aspect-square bg-muted rounded-md" />)}
+            </div>
+          ) : posts && posts.length > 0 ? (
+            <div className="grid grid-cols-3 gap-1 md:gap-2">
+              {posts.map((post: any) => (
+                <div key={post.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-md bg-muted">
+                  <Image 
+                    src={post.photoUrl} 
+                    alt={post.title} 
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-300" 
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-4 w-4 fill-current" />
+                      <span className="text-xs font-bold">{post.likeIds?.length || 0}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>अभी तक कोई पोस्ट नहीं है।</p>
+              <Button variant="link" onClick={() => router.push("/upload")} className="text-primary font-bold">
+                पहली पोस्ट अपलोड करें
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       <BottomNav />
