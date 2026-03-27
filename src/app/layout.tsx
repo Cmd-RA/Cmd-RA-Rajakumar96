@@ -1,18 +1,27 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { NotificationPermission } from '@/components/notification-permission';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'मोनेटाइजेशन - कमाएँ और साझा करें',
   description: 'आपका अपना सोशल मीडिया प्लेटफॉर्म जहाँ कंटेंट के साथ कमाई भी होती है।',
+  manifest: '/manifest.json',
+  themeColor: '#8b5cf6',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'मोनेटाइजेशन',
+  },
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.Node;
 }>) {
   return (
     <html lang="hi">
@@ -29,6 +38,19 @@ export default function RootLayout({
           </main>
           <Toaster />
         </FirebaseClientProvider>
+        <Script id="register-sw" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                  console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                  console.log('ServiceWorker registration failed: ', err);
+                });
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );

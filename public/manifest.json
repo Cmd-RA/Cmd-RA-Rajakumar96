@@ -1,0 +1,23 @@
+
+{
+  "name": "मोनेटाइजेशन - कमाएँ और साझा करें",
+  "short_name": "मोनेटाइजेशन",
+  "description": "आपका अपना सोशल मीडिया प्लेटफॉर्म जहाँ कंटेंट के साथ कमाई भी होती है।",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/appicon/192/192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://picsum.photos/seed/appicon/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

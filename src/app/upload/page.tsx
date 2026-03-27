@@ -1,8 +1,9 @@
+
 "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Send, ShieldAlert, Loader2, Mic } from "lucide-react"
+import { Image as ImageIcon, Send, ShieldAlert, Loader2, Mic, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -90,6 +91,7 @@ export default function UploadPage() {
 
     setIsPosting(true)
     try {
+      // 1. AI Moderation
       const moderation = await moderateContent({ photoDataUri: image, title, description })
       if (!moderation.isAppropriate) {
         toast({ variant: "destructive", title: "पॉलिसी उल्लंघन", description: moderation.reason })
@@ -97,6 +99,7 @@ export default function UploadPage() {
         return
       }
 
+      // 2. Firebase Storage Upload
       const storagePath = `posts/${user.uid}/${Date.now()}.jpg`
       const storageRef = ref(storage, storagePath)
       await uploadString(storageRef, image, 'data_url')
@@ -112,17 +115,17 @@ export default function UploadPage() {
         createdAt: serverTimestamp(),
       }
       
-      // Save to Firebase Firestore
+      // 3. Save to Firebase Firestore
       await addDoc(collection(db, "posts"), postData)
 
-      // Dual Sync: Backup to MongoDB via API Route
+      // 4. Dual Sync: Backup to MongoDB via API Route
       try {
         await fetch('/api/backup-sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             ...postData, 
-            createdAt: new Date().toISOString() // API route expects serializable string
+            createdAt: new Date().toISOString() 
           })
         })
       } catch (backupError) {
@@ -143,6 +146,14 @@ export default function UploadPage() {
       <Header />
       <div className="container max-w-xl mx-auto p-4">
         <h1 className="text-2xl font-black font-headline mb-6">नई कला अपलोड करें</h1>
+        
+        {!user && (
+          <div className="p-6 bg-destructive/5 rounded-[2rem] border border-destructive/10 flex items-center gap-4 mb-8">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <p className="text-xs font-bold text-destructive">अपलोड करने के लिए लॉगिन करना अनिवार्य है।</p>
+          </div>
+        )}
+
         <div className="space-y-6">
           <div 
             className="relative aspect-square w-full rounded-[2.5rem] border-4 border-dashed border-primary/20 bg-muted/30 flex items-center justify-center overflow-hidden cursor-pointer"
@@ -174,7 +185,7 @@ export default function UploadPage() {
             </div>
           </div>
 
-          <Button className="w-full h-16 text-lg font-black rounded-[2rem] shadow-xl" disabled={isPosting || !image} onClick={handlePost}>
+          <Button className="w-full h-16 text-lg font-black rounded-[2rem] shadow-xl" disabled={isPosting || !image || !user} onClick={handlePost}>
             {isPosting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />} पब्लिश करें
           </Button>
 
