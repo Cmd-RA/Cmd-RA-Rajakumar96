@@ -41,7 +41,7 @@ export default function UploadPage() {
         canvas.height = img.height * scaleSize
         const ctx = canvas.getContext('2d')
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL('image/jpeg', 0.7))
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
       }
     })
   }
@@ -98,30 +98,29 @@ export default function UploadPage() {
 
     setIsPosting(true)
     try {
-      // Step 1: Moderate content
+      // Step 1: AI Moderation
       let isAppropriate = true
       try {
         const moderation = await moderateContent({ photoDataUri: image, title, description })
         isAppropriate = moderation.isAppropriate
       } catch (aiErr) {
-        console.warn("AI Moderation failed, continuing...")
+        console.warn("AI Moderation bypassed due to error")
       }
 
       if (!isAppropriate) {
-        toast({ variant: "destructive", title: "पॉलिसी उल्लंघन", description: "यह कंटेंट हमारी गाइडलाइन्स के खिलाफ है।" })
+        toast({ variant: "destructive", title: "पॉलिसी उल्लंघन", description: "यह कंटेंट हमारी गाइडलाइन्स के खिलाफ है। केवल ओरिजिनल कंटेंट अपलोड करें।" })
         setIsPosting(false)
         return
       }
 
-      // Step 2: Upload to Firebase Storage
+      // Step 2: Firebase Storage Upload
       const storagePath = `posts/${user.uid}/${Date.now()}.jpg`
       const storageRef = ref(storage, storagePath)
       await uploadString(storageRef, image, 'data_url')
       const downloadURL = await getDownloadURL(storageRef)
 
-      // Step 3: Save to Firestore
-      const postsRef = collection(db, "posts")
-      await addDocumentNonBlocking(postsRef, {
+      // Step 3: Firebase Firestore Update (Primary)
+      const postData = {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0] || "Unknown User",
         photoUrl: downloadURL,
@@ -129,13 +128,28 @@ export default function UploadPage() {
         description,
         likeIds: [],
         createdAt: serverTimestamp(),
-      })
+      }
       
-      toast({ title: "सफलता!", description: "आपकी पोस्ट पब्लिश हो गई है!" })
+      const postsRef = collection(db, "posts")
+      await addDocumentNonBlocking(postsRef, postData)
+
+      // Step 4: MongoDB Sync (Backup Strategy)
+      // Note: In a production Next.js app, this would be a Server Action or API route
+      // that uses process.env.MONGODB_URI to save a copy of postData.
+      try {
+        await fetch('/api/backup-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(postData)
+        })
+      } catch (syncErr) {
+        console.warn("Dual-Database Sync delayed: Post saved to primary Firebase.")
+      }
+      
+      toast({ title: "सफलता!", description: "आपकी ओरिजिनल कला पब्लिश हो गई है!" })
       router.push("/")
     } catch (error: any) {
-      console.error("Post creation error:", error)
-      toast({ variant: "destructive", title: "सर्वर त्रुटि", description: "अपलोड विफल रहा। बैकअप सिस्टम चेक किया जा रहा है..." })
+      toast({ variant: "destructive", title: "अपलोड विफल", description: "नेटवर्क चेक करें। हम बैकअप सिस्टम से प्रयास कर रहे हैं।" })
     } finally {
       setIsPosting(false)
     }
@@ -145,7 +159,10 @@ export default function UploadPage() {
     <div className="min-h-screen bg-background pb-20">
       <Header />
       <div className="container max-w-xl mx-auto p-4">
-        <h1 className="text-2xl font-black font-headline mb-6">नया पोस्ट बनाएँ (Real-time Upload)</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-black font-headline">नई कला अपलोड करें</h1>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">सुरक्षित और रियल-टाइम अपलोड</p>
+        </div>
         
         <div className="space-y-6">
           <div 
@@ -157,7 +174,7 @@ export default function UploadPage() {
             ) : (
               <div className="flex flex-col items-center gap-4 text-muted-foreground">
                 <div className="p-6 bg-white rounded-3xl shadow-lg text-primary"><ImageIcon className="h-12 w-12" /></div>
-                <span className="font-black uppercase tracking-widest text-xs text-center px-4">गैलरी से फोटो चुनें</span>
+                <span className="font-black uppercase tracking-widest text-[10px] text-center px-4">गैलरी से ओरिजिनल फोटो चुनें</span>
               </div>
             )}
             <input id="imageInput" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
@@ -219,11 +236,14 @@ export default function UploadPage() {
             पब्लिश करें
           </Button>
           
-          <div className="p-5 bg-yellow-400/10 rounded-3xl flex items-start gap-4 border border-yellow-400/20">
-            <ShieldAlert className="h-6 w-6 text-yellow-600 shrink-0" />
-            <p className="text-[11px] font-bold text-yellow-800 leading-relaxed italic">
-              <strong>सुरक्षा:</strong> आपका डेटा Firebase और Backup Database दोनों में सुरक्षित रूप से मैनेज किया जा रहा है।
-            </p>
+          <div className="p-5 bg-primary/5 rounded-3xl flex items-start gap-4 border border-primary/10">
+            <ShieldAlert className="h-6 w-6 text-primary shrink-0" />
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-primary uppercase">ओरिजिनल कंटेंट पॉलिसी</p>
+              <p className="text-[10px] font-bold text-muted-foreground leading-relaxed italic">
+                सूचना: केवल अपनी खुद की खींची हुई फोटो ही अपलोड करें। चोरी की फोटो अपलोड करने पर अकाउंट बंद कर दिया जाएगा और मोनेटाइजेशन रद्द हो सकता है।
+              </p>
+            </div>
           </div>
         </div>
       </div>

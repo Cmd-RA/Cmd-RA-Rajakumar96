@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -43,20 +42,19 @@ export function NotificationPermission() {
       if (!messaging) return;
 
       if ('serviceWorker' in navigator) {
-        // We assume sw is registered or use the default one
         const token = await getToken(messaging, {
-          vapidKey: 'BIb4sp-wtFazJ82-liTgnFkmGjIcwpGHrFdOMRIAZZvN_JyD4TgGGjCh8KnEOF3q3m_GYlzqpBZD8O9gDR784YU',
+          vapidKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
         });
 
         if (token) {
-          console.log('FCM Token generated');
+          console.log('FCM Token generated successfully');
         }
       }
 
       onMessage(messaging, (payload) => {
         toast({
           title: payload.notification?.title || 'नई सूचना',
-          description: payload.notification?.body || 'आपके लिए एक नया अपडेट है!',
+          description: payload.notification?.body || 'मोनेटाइजेशन: आपके लिए एक नया अपडेट है!',
         });
       });
     } catch (error) {
