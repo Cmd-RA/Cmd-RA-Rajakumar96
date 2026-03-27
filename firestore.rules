@@ -11,8 +11,8 @@ service cloud.firestore {
     // यूज़र प्रोफाइल रूल्स
     match /users/{userId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
@@ -20,22 +20,20 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // लाइक और फॉलो के लिए
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // वीडियो प्लेलिस्ट रूल्स - सभी देख सकते हैं, केवल एडमिन बदल सकता है
+    // वीडियो प्लेलिस्ट रूल्स
     match /videos/{videoId} {
       allow read: if true; 
       allow write: if isAdmin();
     }
 
-    // ऐप सेटिंग्स (AdSense) रूल्स - सभी देख सकते हैं, केवल एडमिन बदल सकता है
+    // ऐप सेटिंग्स
     match /app_settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    
-    // नियम अपडेटेड: 2024-05-22 (Force Redeploy)
   }
 }

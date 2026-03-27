@@ -1,12 +1,36 @@
+
 "use client"
 
 import { Smartphone, Download, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react"
+import { useToast } from "@/hooks/use-toast"
 
 export function AppDownloadBanner() {
   const [isVisible, setIsVisible] = useState(true)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      toast({ title: "सूचना", description: "आपका ब्राउज़र पहले से ही इंस्टॉल है या PWA सपोर्ट नहीं करता।" })
+      return
+    }
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null)
+    }
+  }
 
   if (!isVisible) return null
 
@@ -25,19 +49,19 @@ export function AppDownloadBanner() {
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन ऐप डाउनलोड करें!</h3>
+          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन ऐप इंस्टॉल करें!</h3>
           <p className="text-sm opacity-90 mb-4">
-            बेहतर अनुभव, तेज़ ब्राउज़िंग और एक्सक्लूसिव रिवॉर्ड्स के लिए आज ही हमारा मोबाइल ऐप इंस्टॉल करें।
+            बेहतर अनुभव और तेज़ कमाई के लिए अभी हमारी वेबसाइट को ऐप की तरह इंस्टॉल करें।
           </p>
           
           <div className="flex flex-wrap justify-center md:justify-start gap-3">
-            <Button variant="secondary" className="gap-2 font-bold bg-white text-primary hover:bg-white/90">
+            <Button 
+              variant="secondary" 
+              className="gap-2 font-black bg-white text-primary hover:bg-white/90 rounded-xl px-8"
+              onClick={handleInstall}
+            >
               <Download className="h-4 w-4" />
-              Google Play
-            </Button>
-            <Button variant="outline" className="gap-2 border-white text-white hover:bg-white/10">
-              <Download className="h-4 w-4" />
-              App Store
+              अभी इंस्टॉल करें
             </Button>
           </div>
         </div>

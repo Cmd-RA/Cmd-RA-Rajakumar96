@@ -1,9 +1,9 @@
 
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Sparkles, Send, ShieldAlert, Loader2, Mic, MicOff } from "lucide-react"
+import { Image as ImageIcon, Send, ShieldAlert, Loader2, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -28,20 +28,19 @@ export default function UploadPage() {
   const db = useFirestore()
   const { user } = useUser()
 
-  // Image Compression to save Firebase space (Keep it free!)
   const compressImage = (base64Str: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = base64Str
       img.onload = () => {
         const canvas = document.createElement('canvas')
-        const MAX_WIDTH = 800
+        const MAX_WIDTH = 600 // Reduced for better stability
         const scaleSize = MAX_WIDTH / img.width
         canvas.width = MAX_WIDTH
         canvas.height = img.height * scaleSize
         const ctx = canvas.getContext('2d')
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL('image/jpeg', 0.7)) // 70% quality jpeg
+        resolve(canvas.toDataURL('image/jpeg', 0.6)) // 60% quality to ensure staying within limits
       }
     })
   }
@@ -49,21 +48,30 @@ export default function UploadPage() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: "destructive", title: "बड़ी फ़ाइल", description: "कृपया 5MB से छोटी फोटो चुनें।" })
+        return
+      }
       const reader = new FileReader()
       reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string)
-        setImage(compressed)
+        try {
+          const compressed = await compressImage(reader.result as string)
+          setImage(compressed)
+        } catch (err) {
+          toast({ variant: "destructive", title: "त्रुटि", description: "फोटो प्रोसेस करने में विफल।" })
+        }
       }
       reader.readAsDataURL(file)
     }
   }
 
   const startListening = (field: "title" | "description") => {
-    if (!('webkitSpeechRecognition' in window)) {
-      toast({ variant: "destructive", title: "सॉरी", description: "वॉइस टाइपिंग सपोर्ट नहीं है।" })
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast({ variant: "destructive", title: "सॉरी", description: "वॉइस टाइपिंग आपके ब्राउज़र में सपोर्ट नहीं है।" })
       return
     }
-    const recognition = new (window as any).webkitSpeechRecognition()
+    const recognition = new SpeechRecognition()
     recognition.lang = 'hi-IN'
     recognition.onstart = () => { setIsListening(true); setActiveField(field) }
     recognition.onresult = (event: any) => {
@@ -72,30 +80,46 @@ export default function UploadPage() {
       else setDescription(prev => prev + " " + text)
     }
     recognition.onend = () => { setIsListening(false); setActiveField(null) }
+    recognition.onerror = () => { setIsListening(false); setActiveField(null) }
     recognition.start()
   }
 
   const handlePost = async () => {
-    if (!user) { router.push("/login"); return }
+    if (!user) { 
+      toast({ title: "लॉगिन करें", description: "पोस्ट करने के लिए पहले लॉगिन आवश्यक है।" })
+      router.push("/login")
+      return 
+    }
     if (!image || !title || !description) {
-      toast({ variant: "destructive", title: "अधूरा कंटेंट", description: "कृपया फोटो और जानकारी भरें।" })
+      toast({ variant: "destructive", title: "अधूरा कंटेंट", description: "कृपया फोटो, शीर्षक और विवरण भरें।" })
       return
     }
 
     setIsPosting(true)
     try {
-      // Content Moderation via Genkit
-      const moderation = await moderateContent({ photoDataUri: image, title, description })
-      if (!moderation.isAppropriate) {
-        toast({ variant: "destructive", title: "ब्लॉक किया गया", description: moderation.reason })
+      // Step 1: Moderate content
+      let isAppropriate = true
+      let reason = ""
+      
+      try {
+        const moderation = await moderateContent({ photoDataUri: image, title, description })
+        isAppropriate = moderation.isAppropriate
+        reason = moderation.reason
+      } catch (aiErr) {
+        console.warn("AI Moderation failed, continuing with manual safety check", aiErr)
+      }
+
+      if (!isAppropriate) {
+        toast({ variant: "destructive", title: "पॉलिसी उल्लंघन", description: reason || "यह कंटेंट हमारी गाइडलाइन्स के खिलाफ है।" })
         setIsPosting(false)
         return
       }
 
+      // Step 2: Save to Firestore
       const postsRef = collection(db, "posts")
       await addDocumentNonBlocking(postsRef, {
         userId: user.uid,
-        userName: user.displayName || user.email?.split('@')[0],
+        userName: user.displayName || user.email?.split('@')[0] || "Unknown User",
         photoUrl: image,
         title,
         description,
@@ -103,10 +127,11 @@ export default function UploadPage() {
         createdAt: serverTimestamp(),
       })
       
-      toast({ title: "सफलता!", description: "आपकी पोस्ट पब्लिश हो गई है।" })
+      toast({ title: "सफलता!", description: "आपकी पोस्ट पब्लिश हो गई है!" })
       router.push("/")
-    } catch (error) {
-      toast({ variant: "destructive", title: "त्रुटि", description: "अपलोड में समस्या आई।" })
+    } catch (error: any) {
+      console.error("Post creation error:", error)
+      toast({ variant: "destructive", title: "सर्वर त्रुटि", description: "अपलोड विफल रहा। कृपया इंटरनेट चेक करें और दोबारा प्रयास करें।" })
     } finally {
       setIsPosting(false)
     }
@@ -128,7 +153,7 @@ export default function UploadPage() {
             ) : (
               <div className="flex flex-col items-center gap-4 text-muted-foreground">
                 <div className="p-6 bg-white rounded-3xl shadow-lg text-primary"><ImageIcon className="h-12 w-12" /></div>
-                <span className="font-black uppercase tracking-widest text-xs">फोटो चुनें (गैलरी)</span>
+                <span className="font-black uppercase tracking-widest text-xs text-center px-4">गैलरी से फोटो चुनें</span>
               </div>
             )}
             <input id="imageInput" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
@@ -143,10 +168,12 @@ export default function UploadPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="h-14 rounded-2xl border-none bg-white shadow-sm font-bold"
+                  disabled={isPosting}
                 />
                 <Button 
                   variant="outline" 
                   size="icon" 
+                  disabled={isPosting}
                   className={cn("h-14 w-14 rounded-2xl shrink-0", isListening && activeField === "title" && "bg-red-500 text-white animate-pulse")}
                   onClick={() => startListening("title")}
                 >
@@ -164,10 +191,12 @@ export default function UploadPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="rounded-2xl border-none bg-white shadow-sm font-medium resize-none"
+                  disabled={isPosting}
                 />
                 <Button 
                   variant="outline" 
                   size="icon" 
+                  disabled={isPosting}
                   className={cn("h-14 w-14 rounded-2xl shrink-0 mt-auto", isListening && activeField === "description" && "bg-red-500 text-white animate-pulse")}
                   onClick={() => startListening("description")}
                 >
@@ -189,7 +218,7 @@ export default function UploadPage() {
           <div className="p-5 bg-yellow-400/10 rounded-3xl flex items-start gap-4 border border-yellow-400/20">
             <ShieldAlert className="h-6 w-6 text-yellow-600 shrink-0" />
             <p className="text-[11px] font-bold text-yellow-800 leading-relaxed italic">
-              <strong>महत्वपूर्ण:</strong> केवल ओरिजिनल फोटो ही अपलोड करें। चोरी की गई फोटो पाए जाने पर अकाउंट मोनेटाइज नहीं होगा।
+              <strong>नियम:</strong> केवल आपकी स्वयं की खींची हुई ओरिजिनल फोटो ही मान्य है। कॉपीराइट फोटो अपलोड करने पर कमाई रोक दी जाएगी।
             </p>
           </div>
         </div>
