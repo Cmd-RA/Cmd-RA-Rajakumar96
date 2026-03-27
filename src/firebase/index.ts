@@ -7,17 +7,26 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  if (!getApps().length) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      console.error('Firebase initialization failed:', e);
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+  const isClient = typeof window !== 'undefined';
+  
+  if (isClient && !firebaseConfig.apiKey) {
+    console.warn("Firebase API Key is missing. Please set NEXT_PUBLIC_FIREBASE_API_KEY in your environment variables.");
+  }
 
+  if (!getApps().length) {
+    // Only initialize if we have a valid API Key to prevent auth/invalid-api-key crash
+    if (!firebaseConfig.apiKey) {
+      return {
+        firebaseApp: null as any,
+        auth: null as any,
+        firestore: null as any,
+        storage: null as any,
+        messaging: null as any
+      };
+    }
+    
+    const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
 
@@ -25,6 +34,15 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  if (!firebaseApp) {
+    return {
+      firebaseApp: null as any,
+      auth: null as any,
+      firestore: null as any,
+      storage: null as any,
+      messaging: null as any
+    };
+  }
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),

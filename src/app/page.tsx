@@ -10,7 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Sparkles, Star, Info, LayoutGrid, AlertCircle } from "lucide-react"
+import { Sparkles, Star, Info, LayoutGrid } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
@@ -20,95 +20,83 @@ export default function Home() {
     setIsMounted(true)
   }, [])
   
-  // Fetch user posts - Optimized for infinite feel
   const postsQuery = useMemoFirebase(() => {
     if (!db) return null
     return query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100))
   }, [db])
   const { data: realPosts, isLoading: postsLoading } = useCollection(postsQuery)
 
-  // Fetch admin curated videos
   const videosQuery = useMemoFirebase(() => {
     if (!db) return null
     return query(collection(db, "videos"), orderBy("createdAt", "desc"), limit(10))
   }, [db])
   const { data: videos, isLoading: videosLoading } = useCollection(videosQuery)
 
-  // Get AdSense settings from DB
-  const settingsRef = useMemoFirebase(() => doc(db, "app_settings", "global"), [db])
+  const settingsRef = useMemoFirebase(() => db ? doc(db, "app_settings", "global") : null, [db])
   const { data: settings } = useDoc(settingsRef)
 
   const AdFrame = ({ label }: { label: string }) => {
-    if (!isMounted) return <div className="min-h-[120px] my-8 bg-muted/5 animate-pulse rounded-[2.5rem]" />
+    if (!isMounted) return <div className="min-h-[150px] my-8 bg-muted/5 animate-pulse rounded-[2.5rem]" />
     
     return (
       <div className="my-10 w-full px-2">
-        {settings?.adsenseCode ? (
-          <div className="p-8 bg-white rounded-[2.5rem] border border-primary/10 shadow-xl overflow-hidden flex flex-col items-center min-h-[150px] transition-all hover:shadow-2xl">
-             <p className="text-[9px] font-black uppercase text-muted-foreground mb-6 tracking-[0.3em] flex items-center gap-2">
-               <span className="h-1 w-1 bg-primary rounded-full" /> Google Sponsored Ad <span className="h-1 w-1 bg-primary rounded-full" />
-             </p>
-             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center min-h-[100px]" />
-          </div>
-        ) : (
-          <div className="p-8 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center min-h-[150px]">
-            <AlertCircle className="h-6 w-6 text-muted-foreground/20 mb-3" />
-            <p className="text-[10px] font-black uppercase text-muted-foreground/30 tracking-widest">Ad Slot Ready: {label}</p>
-          </div>
-        )}
+        <div className="p-8 bg-white/50 backdrop-blur-sm rounded-[2.5rem] border-2 border-primary/5 shadow-xl flex flex-col items-center justify-center min-h-[180px]">
+           <p className="text-[9px] font-black uppercase text-muted-foreground/40 mb-4 tracking-[0.4em]">Google Advertisement Space</p>
+           {settings?.adsenseCode ? (
+             <div dangerouslySetInnerHTML={{ __html: settings.adsenseCode }} className="w-full flex justify-center" />
+           ) : (
+             <p className="text-[10px] font-black text-muted-foreground/20 italic">Ad Slot Ready: {label}</p>
+           )}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 bg-background/50">
+    <div className="min-h-screen pb-20 md:pb-0 bg-background/30">
       <Header />
       
       <div className="container max-w-2xl mx-auto px-4 pt-8">
-        
         <AppDownloadBanner />
 
-        {/* Global Top Ad */}
-        <AdFrame label="Header Banner Ad" />
+        <AdFrame label="Header Master Ad" />
 
-        {/* ADMIN EXCLUSIVE PLAYLIST - Always at Top */}
+        {/* Admin Featured Playlist */}
         <div className="mb-12">
-          <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3 px-2">
-            <div className="p-3 bg-primary/20 rounded-2xl shadow-lg rotate-3"><Star className="text-primary h-7 w-7 fill-current" /></div>
-            विशेष प्रस्तुतियाँ (Top Pick)
+          <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3">
+            <div className="p-3 bg-primary/20 rounded-2xl"><Star className="text-primary h-7 w-7 fill-current" /></div>
+            आज की विशेष प्रस्तुतियाँ
           </h2>
-          <div className="flex gap-5 overflow-x-auto pb-8 no-scrollbar snap-x">
+          <div className="flex gap-5 overflow-x-auto pb-8 no-scrollbar">
             {videosLoading ? (
-              [1, 2].map(i => <Skeleton key={i} className="min-w-[320px] h-[220px] rounded-[3rem]" />)
+              <Skeleton className="min-w-[320px] h-[220px] rounded-[3rem]" />
             ) : (
               videos?.map((v: any) => (
                 <VideoCard key={v.id} id={v.id} title={v.title} videoUrl={v.videoUrl} type={v.type} />
               ))
             )}
-            {videos?.length === 0 && !videosLoading && (
-              <div className="px-6 py-12 bg-muted/20 rounded-[2.5rem] border border-dashed w-full text-center">
-                <p className="text-xs text-muted-foreground italic font-bold">जल्द ही नए वीडियो आ रहे हैं...</p>
-              </div>
+            {!videosLoading && (!videos || videos.length === 0) && (
+              <div className="min-w-full text-center py-10 text-muted-foreground text-sm font-bold">एडमिन ने अभी कोई वीडियो नहीं जोड़ा है</div>
             )}
           </div>
         </div>
 
-        {/* Mid-Playlist Ad */}
-        <AdFrame label="After Playlist Ad" />
+        <AdFrame label="Mid-Feed Ad Slot" />
 
-        {/* FEATURED FEED - Users Posts with Strategic Ad Frames Every 2-3 Posts */}
-        <div className="space-y-12 mb-12">
+        {/* Global User Feed */}
+        <div className="space-y-12">
           <div className="flex items-center justify-between px-2 mb-8">
             <h2 className="text-2xl font-black font-headline flex items-center gap-3">
-              <div className="p-3 bg-yellow-400/10 rounded-2xl -rotate-3"><Sparkles className="text-yellow-600 h-7 w-7 fill-current" /></div>
-              कलाकारों की दुनिया
+              <div className="p-3 bg-yellow-400/10 rounded-2xl"><Sparkles className="text-yellow-600 h-7 w-7 fill-current" /></div>
+              कलाकारों की नई दुनिया
             </h2>
-            <div className="p-2 bg-muted/20 rounded-full"><LayoutGrid className="text-muted-foreground h-5 w-5" /></div>
+            <LayoutGrid className="text-muted-foreground h-5 w-5" />
           </div>
           
           {postsLoading ? (
-            <div className="space-y-12">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-[550px] w-full rounded-[3.5rem]" />)}
+            <div className="space-y-8">
+              <Skeleton className="h-[400px] w-full rounded-[3rem]" />
+              <Skeleton className="h-[400px] w-full rounded-[3rem]" />
             </div>
           ) : (
             realPosts?.map((post: any, index: number) => (
@@ -121,10 +109,10 @@ export default function Home() {
                   title={post.title}
                   description={post.description}
                   likeIds={post.likeIds}
-                  isFeatured={index < 5}
+                  isFeatured={index < 3}
                 />
                 
-                {/* STRATEGIC IN-FEED ADS: Shows every 2 posts for high visibility */}
+                {/* INFINITE AD FLOW: Every 2 posts, show an Ad Frame */}
                 {(index + 1) % 2 === 0 && (
                   <AdFrame label={`Feed Slot ${Math.floor(index / 2) + 1}`} />
                 )}
@@ -133,14 +121,13 @@ export default function Home() {
           )}
         </div>
 
-        {/* Infinite Scroll Bottom Ad */}
-        <AdFrame label="Footer Content Ad" />
+        <AdFrame label="Footer Infinite Ad" />
 
-        <div className="py-32 text-center">
-           <div className="flex justify-center mb-8 opacity-10 animate-bounce"><Info className="h-16 w-16" /></div>
-           <p className="text-xs text-muted-foreground font-black uppercase tracking-[0.8em] px-4 leading-loose">
-             कला और कमाई का संगम ✨
-           </p>
+        <div className="py-24 text-center">
+           <div className="p-6 bg-white/5 shadow-inner rounded-full inline-block mb-4">
+             <Info className="h-10 w-10 text-primary opacity-20" />
+           </div>
+           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.5em]">कला, कमाई और सुरक्षा का संगम ✨</p>
         </div>
       </div>
       <Footer />

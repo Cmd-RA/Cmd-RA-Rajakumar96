@@ -11,10 +11,13 @@ export function NotificationPermission() {
 
   useEffect(() => {
     const checkSupportAndRequest = async () => {
+      // Avoid server-side messaging init
+      if (typeof window === 'undefined') return;
+
       const messagingSupported = await isSupported();
       if (!messagingSupported) return;
 
-      if (typeof window !== 'undefined' && 'Notification' in window) {
+      if ('Notification' in window) {
         setPermission(Notification.permission);
         
         if (Notification.permission === 'default') {
@@ -25,7 +28,7 @@ export function NotificationPermission() {
               setupMessaging();
             }
           } catch (err) {
-            console.error('Notification error:', err);
+            console.warn('Notification request failed:', err);
           }
         } else if (Notification.permission === 'granted') {
           setupMessaging();
@@ -42,8 +45,11 @@ export function NotificationPermission() {
       if (!messaging) return;
 
       if ('serviceWorker' in navigator) {
+        // Use the VAPID key from environment variables
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        
         const token = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+          vapidKey: vapidKey,
         });
 
         if (token) {

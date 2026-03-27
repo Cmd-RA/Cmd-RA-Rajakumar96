@@ -2,78 +2,47 @@
 
 import { Smartphone, Download, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 
 export function AppDownloadBanner() {
   const [isVisible, setIsVisible] = useState(true)
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  const handleInstall = async () => {
-    // Priority 1: APK Download if on mobile
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      window.open("https://your-apk-link.com/app.apk", "_blank")
-      toast({ title: "सफलता", description: "APK फाइल डाउनलोड हो रही है।" })
-      return
-    }
-
-    // Priority 2: PWA Install
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') setDeferredPrompt(null)
-    } else {
-      toast({ title: "सूचना", description: "ऐप पहले से ही इंस्टॉल है या PWA सपोर्ट नहीं है।" })
-    }
+  const handleDownloadAPK = () => {
+    // यहाँ आपकी असली APK फाइल का लिंक आएगा
+    window.open("https://monetization-app.example/downloads/monetization-v1.apk", "_blank")
+    toast({ title: "डाउनलोड शुरू", description: "मोनेटाइजेशन APK फाइल डाउनलोड हो रही है।" })
   }
 
   if (!isVisible) return null
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-accent p-6 text-primary-foreground shadow-lg mb-8">
-      <button 
-        onClick={() => setIsVisible(false)}
-        className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded-full transition-colors"
-      >
-        <X className="h-4 w-4" />
+    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-primary to-accent p-8 text-white shadow-2xl mb-12 border-4 border-white/10">
+      <button onClick={() => setIsVisible(false)} className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors">
+        <X className="h-5 w-5" />
       </button>
 
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="bg-white/20 p-4 rounded-2xl">
-          <Smartphone className="h-12 w-12" />
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="bg-white/20 p-6 rounded-[2rem] shadow-inner animate-pulse">
+          <Smartphone className="h-14 w-14" />
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन APK डाउनलोड करें!</h3>
-          <p className="text-sm opacity-90 mb-4">
-            बेहतर अनुभव और तेज़ कमाई के लिए अभी हमारी वेबसाइट को ऐप (APK) की तरह इंस्टॉल करें।
+          <h3 className="text-2xl font-black font-headline mb-2 tracking-tight">ऑफिसियल APK डाउनलोड करें!</h3>
+          <p className="text-sm opacity-90 mb-6 font-bold">
+            तेज़ अपलोड और रीयल-टाइम नोटिफिकेशन्स के लिए हमारा एंड्रॉइड ऐप इंस्टॉल करें।
           </p>
           
-          <div className="flex flex-wrap justify-center md:justify-start gap-3">
-            <Button 
-              variant="secondary" 
-              className="gap-2 font-black bg-white text-primary hover:bg-white/90 rounded-xl px-8"
-              onClick={handleInstall}
-            >
-              <Download className="h-4 w-4" />
-              APK डाउनलोड करें
-            </Button>
-          </div>
+          <Button 
+            variant="secondary" 
+            className="h-14 px-10 rounded-2xl bg-white text-primary font-black text-lg gap-3 hover:scale-105 transition-transform shadow-xl"
+            onClick={handleDownloadAPK}
+          >
+            <Download className="h-6 w-6" /> APK डाउनलोड करें
+          </Button>
         </div>
       </div>
-      
-      <div className="absolute -bottom-6 -right-6 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
-      <div className="absolute -top-6 -left-6 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
     </div>
   )
 }
