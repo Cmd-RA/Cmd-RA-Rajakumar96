@@ -62,7 +62,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
   } catch (err) {
     console.error("Error initializing Firebase SDKs:", err);
     return {
-      firebaseApp,
+      firebaseApp: null,
       auth: null,
       firestore: null,
       storage: null,

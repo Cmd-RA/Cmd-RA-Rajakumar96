@@ -12,8 +12,8 @@ import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { 
   Trophy, LayoutGrid, DollarSign, PlusCircle, UserCircle,
-  LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2, ShieldCheck, MessageCircle, ExternalLink, 
-  Settings2, FileText, ShieldAlert, Heart, Info, Camera
+  LogOut, Loader2, Landmark, Save, ShieldCheck, MessageCircle, ExternalLink, 
+  Settings2, FileText, ShieldAlert, Heart, Info, Camera, CheckCircle2
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -76,13 +76,11 @@ export default function ProfilePage() {
     if (!userDocRef || !auth?.currentUser) return
     setIsUpdating(true)
     try {
-      // Update Firebase Auth Profile
       await updateProfile(auth.currentUser, {
         displayName: profileInfo.name,
         photoURL: profileInfo.photoUrl
       })
 
-      // Update Firestore User Doc
       await setDoc(userDocRef, {
         name: profileInfo.name,
         bio: profileInfo.bio,
@@ -126,7 +124,6 @@ export default function ProfilePage() {
   if (!user) { router.push("/login"); return null; }
 
   const followerCount = profileData?.followerCount || 0
-  const totalLikes = posts?.reduce((acc: number, post: any) => acc + (post.likeIds?.length || 0), 0) || 0
   const monetizationGoal = 1000
   const progressValue = Math.min((followerCount / monetizationGoal) * 100, 100)
   const isMonetized = followerCount >= monetizationGoal
@@ -168,15 +165,9 @@ export default function ProfilePage() {
             <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2 bg-muted/50 px-3 py-1 rounded-full inline-block">
               CREATOR ID: {user.uid.substring(0, 8)}
             </p>
-            {profileInfo.bio ? (
-              <p className="mt-4 text-sm font-medium text-muted-foreground italic leading-relaxed max-w-xs mx-auto">
-                "{profileInfo.bio}"
-              </p>
-            ) : (
-              <button onClick={() => setIsEditing(true)} className="mt-4 text-[10px] font-black text-primary uppercase border-b border-primary/20 pb-0.5">
-                + अपना बायो लिखें
-              </button>
-            )}
+            <p className="mt-4 text-sm font-medium text-muted-foreground italic leading-relaxed max-w-xs mx-auto">
+              {profileInfo.bio || "अपने बारे में कुछ लिखें..."}
+            </p>
           </div>
           
           <div className="grid grid-cols-3 gap-8 w-full mt-10 px-8">
@@ -189,7 +180,7 @@ export default function ProfilePage() {
               <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">फॉलोअर्स</p>
             </div>
             <div className="text-center">
-              <p className="font-black text-2xl text-primary">{totalLikes}</p>
+              <p className="font-black text-2xl text-primary">{profileData?.totalLikes || 0}</p>
               <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">लाइक</p>
             </div>
           </div>
@@ -360,41 +351,6 @@ export default function ProfilePage() {
               </Button>
             </CardContent>
           </Card>
-        </div>
-
-        {/* User Gallery Ecosystem */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6 px-1">
-            <h2 className="font-black font-headline text-2xl flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-full"><LayoutGrid className="h-5 w-5 text-primary" /></div>
-              आपकी गैलरी
-            </h2>
-            <Link href="/upload">
-              <Button variant="outline" size="sm" className="rounded-full gap-2 font-black text-[10px] uppercase border-primary/20">
-                <PlusCircle className="h-3 w-3" /> नई फोटो
-              </Button>
-            </Link>
-          </div>
-          
-          {posts && posts.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3">
-              {posts.map((post: any) => (
-                <div key={post.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-[1.5rem] bg-muted shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
-                  <Image src={post.photoUrl} alt={post.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="flex items-center gap-1 text-white font-black text-xs">
-                      <Heart className="h-3 w-3 fill-current" /> {post.likeIds?.length || 0}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-muted/10 rounded-[3rem] border-4 border-dashed border-muted">
-              <p className="text-muted-foreground font-black mb-6 uppercase tracking-widest text-xs">अभी कोई पोस्ट नहीं है</p>
-              <Button onClick={() => router.push("/upload")} variant="secondary" className="rounded-full px-8 font-black shadow-md">पहली फोटो डालें</Button>
-            </div>
-          )}
         </div>
 
         {/* Policies Ecosystem */}
