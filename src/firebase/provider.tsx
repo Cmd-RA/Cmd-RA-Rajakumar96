@@ -108,6 +108,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
+  // Return services as they are, caller must handle nulls
   return {
     firebaseApp: context.firebaseApp,
     firestore: context.firestore,
@@ -120,18 +121,18 @@ export const useFirebase = (): FirebaseServicesAndUser => {
 };
 
 export const useAuth = (): Auth | null => {
-  const { auth } = useFirebase();
-  return auth;
+  const context = useContext(FirebaseContext);
+  return context?.auth || null;
 };
 
 export const useFirestore = (): Firestore | null => {
-  const { firestore } = useFirebase();
-  return firestore;
+  const context = useContext(FirebaseContext);
+  return context?.firestore || null;
 };
 
 export const useStorage = () => {
-  const { storage } = useFirebase();
-  return storage;
+  const context = useContext(FirebaseContext);
+  return context?.storage || null;
 };
 
 type MemoFirebase <T> = T & {__memo?: boolean};
@@ -144,6 +145,10 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
 }
 
 export const useUser = (): UserHookResult => {
-  const { user, isUserLoading, userError } = useFirebase();
-  return { user, isUserLoading, userError };
+  const context = useContext(FirebaseContext);
+  return {
+    user: context?.user || null,
+    isUserLoading: context?.isUserLoading ?? true,
+    userError: context?.userError || null
+  };
 };

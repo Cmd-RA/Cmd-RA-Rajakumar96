@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -77,8 +76,10 @@ export default function ProfilePage() {
   }
 
   const handleLogout = async () => {
-    await signOut(auth)
-    router.push("/login")
+    if (auth) {
+      await signOut(auth)
+      router.push("/login")
+    }
   }
 
   if (isUserLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -138,7 +139,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Support Section - NEW 24/7 Telegram Support */}
+        {/* 24/7 Telegram Support Section */}
         <Card className="mt-8 border-none shadow-2xl bg-[#0088cc]/10 overflow-hidden rounded-[2rem] border-2 border-[#0088cc]/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between gap-4">

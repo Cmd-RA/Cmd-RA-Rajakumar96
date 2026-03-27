@@ -112,19 +112,21 @@ export default function UploadPage() {
         createdAt: serverTimestamp(),
       }
       
+      // Save to Firebase Firestore
       await addDoc(collection(db, "posts"), postData)
 
+      // Dual Sync: Backup to MongoDB via API Route
       try {
         await fetch('/api/backup-sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             ...postData, 
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString() // API route expects serializable string
           })
         })
       } catch (backupError) {
-        console.warn('MongoDB Sync delayed.')
+        console.warn('MongoDB Sync delayed, but Firestore saved.')
       }
 
       toast({ title: "सफलता!", description: "आपकी फोटो पब्लिश हो गई है और सुरक्षित है!" })

@@ -118,6 +118,7 @@ export default function Home() {
                       isFeatured={index < 3}
                     />
                     
+                    {/* Ads frame every 2 posts for maximum AdSense optimization */}
                     {(index + 1) % 2 === 0 && (
                       <AdFrame label={`Feed Slot ${Math.floor(index / 2) + 1}`} />
                     )}
