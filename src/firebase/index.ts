@@ -10,10 +10,10 @@ import { getMessaging } from 'firebase/messaging';
 export function initializeFirebase() {
   const isClient = typeof window !== 'undefined';
   
-  // Strict check for API key to prevent 'auth/invalid-api-key' error
-  if (!firebaseConfig.apiKey) {
+  // API key check to prevent initialization crash
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
     if (isClient) {
-      console.warn("Firebase API Key is missing. Check your Netlify Environment Variables.");
+      console.warn("Firebase Configuration is missing. Please check your Environment Variables in Netlify.");
     }
     return {
       firebaseApp: null,

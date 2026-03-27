@@ -10,7 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Sparkles, Star, Info, LayoutGrid, Loader2 } from "lucide-react"
+import { Sparkles, Star, Info, LayoutGrid, Loader2, AlertCircle } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
@@ -24,7 +24,7 @@ export default function Home() {
     if (!db) return null
     return query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100))
   }, [db])
-  const { data: realPosts, isLoading: postsLoading } = useCollection(postsQuery)
+  const { data: realPosts, isLoading: postsLoading, error: postsError } = useCollection(postsQuery)
 
   const videosQuery = useMemoFirebase(() => {
     if (!db) return null
@@ -68,6 +68,13 @@ export default function Home() {
           <>
             <AppDownloadBanner />
             <AdFrame label="Header Master Ad" />
+
+            {postsError && (
+              <div className="p-6 bg-destructive/5 rounded-[2rem] border border-destructive/10 flex items-center gap-4 mb-8">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+                <p className="text-xs font-bold text-destructive">डेटाबेस से जुड़ने में समस्या आ रही है। कृपया नेटलिफाई सेटिंग्स चेक करें।</p>
+              </div>
+            )}
 
             <div className="mb-12">
               <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3">
