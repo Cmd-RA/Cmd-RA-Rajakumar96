@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { 
   Trophy, LayoutGrid, DollarSign, PlusCircle, UserCircle,
   LogOut, Loader2, Landmark, Save, ShieldCheck, MessageCircle, ExternalLink, 
-  Settings2, FileText, ShieldAlert, Heart, Info, Camera, CheckCircle2
+  Settings2, FileText, ShieldAlert, Heart, Info, Camera, CheckCircle2,
+  HelpCircle, ChevronRight
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -351,6 +352,22 @@ export default function ProfilePage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Quick Links / Guide */}
+          <div className="grid grid-cols-1 gap-4">
+            <Link href="/about">
+              <div className="p-6 bg-white rounded-[2rem] shadow-md flex items-center justify-between group hover:bg-primary/5 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-2xl text-primary"><HelpCircle className="h-6 w-6" /></div>
+                  <div>
+                    <p className="font-black text-sm uppercase">प्लेटफॉर्म गाइड</p>
+                    <p className="text-[10px] font-bold text-muted-foreground">जानें कैसे काम करता है मोनेटाइजेशन</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* Policies Ecosystem */}

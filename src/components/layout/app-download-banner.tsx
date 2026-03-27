@@ -1,39 +1,49 @@
 "use client"
 
-import { Smartphone, Download, X, AlertCircle } from "lucide-react"
+import { Smartphone, Download, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
+import { doc } from "firebase/firestore"
 
 export function AppDownloadBanner() {
   const [isVisible, setIsVisible] = useState(true)
   const [isDownloading, setIsDownloading] = useState(false)
   const { toast } = useToast()
+  const db = useFirestore()
+
+  const settingsRef = useMemoFirebase(() => db ? doc(db, "app_settings", "global") : null, [db])
+  const { data: settings } = useDoc(settingsRef)
 
   const handleDownloadAPK = async () => {
     setIsDownloading(true)
     
     try {
-      // Direct relative path download
-      // IMPORTANT: Place your APK in public/downloads/monetization.apk
-      const apkUrl = "/downloads/monetization.apk" 
+      // Fetch URL from Admin Settings or use local fallback
+      const apkUrl = settings?.appDownloadUrl || "/downloads/monetization.apk" 
       
+      if (!apkUrl || apkUrl === "/downloads/monetization.apk") {
+        console.warn("Using default or placeholder path. Ensure file exists in public/downloads/ if local.")
+      }
+
       const link = document.createElement('a')
       link.href = apkUrl
-      link.setAttribute('download', 'Monetization_v1.apk')
+      link.setAttribute('download', 'Monetization_App.apk')
+      link.target = "_blank" // Open in new tab for safety
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
 
       toast({ 
         title: "डाउनलोड शुरू", 
-        description: "मोनेटाइजेशन APK फाइल आपके फोन में सेव हो रही है।" 
+        description: "मोनेटाइजेशन APK फाइल डाउनलोड की जा रही है।" 
       })
     } catch (err) {
       toast({ 
         variant: "destructive",
         title: "डाउनलोड त्रुटि", 
-        description: "सर्वर से फाइल प्राप्त करने में विफल। कृपया बाद में प्रयास करें।" 
+        description: "सर्वर से फाइल प्राप्त करने में विफल। एडमिन से संपर्क करें।" 
       })
     } finally {
       setTimeout(() => setIsDownloading(false), 2000)
@@ -43,7 +53,7 @@ export function AppDownloadBanner() {
   if (!isVisible) return null
 
   return (
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-accent to-primary p-8 text-white shadow-2xl mb-12 border-4 border-white/10 group">
+    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-accent to-primary p-8 text-white shadow-2xl mb-12 border-4 border-white/10 group animate-in fade-in zoom-in duration-500">
       <button 
         onClick={() => setIsVisible(false)} 
         className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors z-10"
@@ -80,24 +90,5 @@ export function AppDownloadBanner() {
         </div>
       </div>
     </div>
-  )
-}
-
-function Loader2({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
   )
 }

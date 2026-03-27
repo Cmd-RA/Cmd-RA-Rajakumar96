@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase } from "@/firebase"
 import { doc, setDoc, collection, query, orderBy, serverTimestamp, deleteDoc } from "firebase/firestore"
 import { 
-  Users, ShieldAlert, Code2, Save, Loader2, Video as VideoIcon, Plus, Trash2, Link as LinkIcon, Info, Play, Eraser
+  Users, ShieldAlert, Code2, Save, Loader2, Video as VideoIcon, Plus, Trash2, Link as LinkIcon, Info, Play, Eraser, Smartphone
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -23,6 +23,7 @@ export default function AdminPage() {
   const router = useRouter()
   
   const [adsenseCode, setAdsenseCode] = useState("")
+  const [appDownloadUrl, setAppDownloadUrl] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   
   // Video Form State
@@ -38,27 +39,32 @@ export default function AdminPage() {
     }
   }, [user, isUserLoading, router, toast])
 
-  const settingsDocRef = useMemoFirebase(() => doc(db, "app_settings", "global"), [db])
+  const settingsDocRef = useMemoFirebase(() => db ? doc(db, "app_settings", "global") : null, [db])
   const { data: settings } = useDoc(settingsDocRef)
   
-  const usersQuery = useMemoFirebase(() => collection(db, "users"), [db])
+  const usersQuery = useMemoFirebase(() => db ? collection(db, "users") : null, [db])
   const { data: allUsers } = useCollection(usersQuery)
 
-  const videosQuery = useMemoFirebase(() => query(collection(db, "videos"), orderBy("createdAt", "desc")), [db])
+  const videosQuery = useMemoFirebase(() => db ? query(collection(db, "videos"), orderBy("createdAt", "desc")) : null, [db])
   const { data: allVideos } = useCollection(videosQuery)
 
   useEffect(() => {
-    if (settings?.adsenseCode) setAdsenseCode(settings.adsenseCode)
+    if (settings) {
+      if (settings.adsenseCode) setAdsenseCode(settings.adsenseCode)
+      if (settings.appDownloadUrl) setAppDownloadUrl(settings.appDownloadUrl)
+    }
   }, [settings])
 
-  const saveAdsense = async () => {
+  const saveSettings = async () => {
+    if (!settingsDocRef) return
     setIsSaving(true)
     try {
       await setDoc(settingsDocRef, { 
         adsenseCode, 
+        appDownloadUrl,
         updatedAt: serverTimestamp() 
       }, { merge: true })
-      toast({ title: "सफलता", description: "AdSense कोड अपडेट कर दिया गया है।" })
+      toast({ title: "सफलता", description: "सभी सेटिंग्स अपडेट कर दी गई हैं।" })
     } catch (e) {
       toast({ variant: "destructive", title: "त्रुटि", description: "सेव करने में विफल।" })
     } finally {
@@ -66,24 +72,8 @@ export default function AdminPage() {
     }
   }
 
-  const deleteAdsense = async () => {
-    setIsSaving(true)
-    try {
-      await setDoc(settingsDocRef, { 
-        adsenseCode: "", 
-        updatedAt: serverTimestamp() 
-      }, { merge: true })
-      setAdsenseCode("")
-      toast({ title: "हटाया गया", description: "AdSense कोड विज्ञापन से हटा दिया गया है।" })
-    } catch (e) {
-      toast({ variant: "destructive", title: "त्रुटि", description: "हटाने में विफल।" })
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   const handleAddVideo = async () => {
-    if (!videoTitle || !videoUrl) {
+    if (!db || !videoTitle || !videoUrl) {
       toast({ variant: "destructive", title: "त्रुटि", description: "शीर्षक और लिंक भरें।" })
       return
     }
@@ -107,6 +97,7 @@ export default function AdminPage() {
   }
 
   const handleDeleteVideo = async (id: string) => {
+    if (!db) return
     try {
       await deleteDoc(doc(db, "videos", id))
       toast({ title: "सफलता", description: "वीडियो हटा दिया गया है।" })
@@ -115,7 +106,7 @@ export default function AdminPage() {
     }
   }
 
-  if (isUserLoading || !user) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>
+  if (isUserLoading || !user) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -132,33 +123,44 @@ export default function AdminPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* AdSense Manager */}
+          {/* AdSense & App Config */}
           <Card className="lg:col-span-2 border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
             <CardHeader className="bg-primary/5 p-8 border-b border-primary/10">
               <CardTitle className="flex items-center gap-3 text-2xl font-black">
-                <Code2 className="text-primary h-8 w-8" /> Google AdSense कोड मैनेजर
+                <Code2 className="text-primary h-8 w-8" /> वेबसाइट और ऐप सेटिंग्स
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Google AdSense स्क्रिप्ट यहाँ डालें (Add/Edit Code)</label>
-                <textarea 
-                  className="w-full h-64 p-6 text-sm font-mono bg-muted/30 rounded-3xl border-none focus:ring-4 ring-primary/10 outline-none resize-none"
-                  placeholder="<script async src='https://pagead2.googlesyndication.com/...'></script>"
-                  value={adsenseCode}
-                  onChange={(e) => setAdsenseCode(e.target.value)}
-                />
+            <CardContent className="p-8 space-y-8">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Google AdSense स्क्रिप्ट</label>
+                  <textarea 
+                    className="w-full h-48 p-6 text-sm font-mono bg-muted/30 rounded-3xl border-none focus:ring-4 ring-primary/10 outline-none resize-none"
+                    placeholder="<script async src='...'></script>"
+                    value={adsenseCode}
+                    onChange={(e) => setAdsenseCode(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">App Download URL (Direct Link)</label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                      className="pl-12 rounded-2xl h-14 bg-muted/30 border-none font-bold"
+                      placeholder="https://example.com/your-app.apk"
+                      value={appDownloadUrl}
+                      onChange={(e) => setAppDownloadUrl(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-[10px] text-primary font-bold ml-2">सूचना: यहाँ अपना असली APK फाइल लिंक डालें ताकि 'Download Failed' एरर न आए।</p>
+                </div>
               </div>
-              <div className="flex gap-4">
-                <Button className="flex-1 h-16 rounded-[1.5rem] text-lg font-black gap-2 shadow-xl" onClick={saveAdsense} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="h-6 w-6" />}
-                  पूरे वेबसाइट पर विज्ञापन लागू करें
-                </Button>
-                <Button variant="outline" className="h-16 px-8 rounded-[1.5rem] text-destructive font-black gap-2 border-destructive/20 hover:bg-destructive/5" onClick={deleteAdsense} disabled={isSaving}>
-                  <Eraser className="h-6 w-6" />
-                  हटाएँ
-                </Button>
-              </div>
+
+              <Button className="w-full h-16 rounded-[1.5rem] text-lg font-black gap-2 shadow-xl" onClick={saveSettings} disabled={isSaving}>
+                {isSaving ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="h-6 w-6" />}
+                सेटिंग्स सुरक्षित करें
+              </Button>
             </CardContent>
           </Card>
 
@@ -244,7 +246,7 @@ export default function AdminPage() {
                     {allUsers?.map((u: any) => (
                       <TableRow key={u.id}>
                         <TableCell className="px-6">
-                           <p className="font-bold text-sm">{u.name}</p>
+                           <p className="font-bold text-sm">{u.name || "अज्ञात"}</p>
                            <p className="text-[9px] text-muted-foreground uppercase">{u.email}</p>
                         </TableCell>
                         <TableCell className="text-xs space-y-1">
@@ -259,7 +261,7 @@ export default function AdminPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right px-6">
-                           <Badge variant={u.followerCount >= 1000 ? "default" : "secondary"}>
+                           <Badge variant={(u.followerCount || 0) >= 1000 ? "default" : "secondary"}>
                              {u.followerCount || 0}
                            </Badge>
                         </TableCell>

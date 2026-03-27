@@ -9,13 +9,11 @@ import { getMessaging } from 'firebase/messaging';
 
 /**
  * Initializes Firebase and its services safely.
- * Prevents crashes due to missing or invalid API keys during SSR or build.
  */
 export function initializeFirebase() {
-  const isClient = typeof window !== 'undefined';
-  
-  // Basic validation to prevent "invalid-api-key" crash
+  // Defensive check for environment variables
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined" || firebaseConfig.apiKey === "") {
+    console.warn("Firebase API key is missing. Ensure NEXT_PUBLIC_ variables are set in Netlify.");
     return {
       firebaseApp: null,
       auth: null,
