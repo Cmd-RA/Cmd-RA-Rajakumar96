@@ -10,7 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from "@/firebase
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Footer } from "@/components/layout/footer"
-import { Sparkles, Star, Info, LayoutGrid } from "lucide-react"
+import { Sparkles, Star, Info, LayoutGrid, Loader2 } from "lucide-react"
 
 export default function Home() {
   const db = useFirestore()
@@ -57,71 +57,78 @@ export default function Home() {
       <Header />
       
       <div className="container max-w-2xl mx-auto px-4 pt-8">
-        <AppDownloadBanner />
-
-        <AdFrame label="Header Master Ad" />
-
-        {/* Admin Featured Playlist */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3">
-            <div className="p-3 bg-primary/20 rounded-2xl"><Star className="text-primary h-7 w-7 fill-current" /></div>
-            आज की विशेष प्रस्तुतियाँ
-          </h2>
-          <div className="flex gap-5 overflow-x-auto pb-8 no-scrollbar">
-            {videosLoading ? (
-              <Skeleton className="min-w-[320px] h-[220px] rounded-[3rem]" />
-            ) : (
-              videos?.map((v: any) => (
-                <VideoCard key={v.id} id={v.id} title={v.title} videoUrl={v.videoUrl} type={v.type} />
-              ))
-            )}
-            {!videosLoading && (!videos || videos.length === 0) && (
-              <div className="min-w-full text-center py-10 text-muted-foreground text-sm font-bold">एडमिन ने अभी कोई वीडियो नहीं जोड़ा है</div>
-            )}
+        {!db && (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
+            <p className="font-black uppercase tracking-widest text-[10px]">सर्वर से जुड़ रहे हैं... कृपया प्रतीक्षा करें</p>
           </div>
-        </div>
+        )}
 
-        <AdFrame label="Mid-Feed Ad Slot" />
+        {db && (
+          <>
+            <AppDownloadBanner />
+            <AdFrame label="Header Master Ad" />
 
-        {/* Global User Feed */}
-        <div className="space-y-12">
-          <div className="flex items-center justify-between px-2 mb-8">
-            <h2 className="text-2xl font-black font-headline flex items-center gap-3">
-              <div className="p-3 bg-yellow-400/10 rounded-2xl"><Sparkles className="text-yellow-600 h-7 w-7 fill-current" /></div>
-              कलाकारों की नई दुनिया
-            </h2>
-            <LayoutGrid className="text-muted-foreground h-5 w-5" />
-          </div>
-          
-          {postsLoading ? (
-            <div className="space-y-8">
-              <Skeleton className="h-[400px] w-full rounded-[3rem]" />
-              <Skeleton className="h-[400px] w-full rounded-[3rem]" />
-            </div>
-          ) : (
-            realPosts?.map((post: any, index: number) => (
-              <div key={post.id}>
-                <PostCard
-                  id={post.id}
-                  userId={post.userId}
-                  userName={post.userName}
-                  imageUrl={post.photoUrl}
-                  title={post.title}
-                  description={post.description}
-                  likeIds={post.likeIds}
-                  isFeatured={index < 3}
-                />
-                
-                {/* INFINITE AD FLOW: Every 2 posts, show an Ad Frame */}
-                {(index + 1) % 2 === 0 && (
-                  <AdFrame label={`Feed Slot ${Math.floor(index / 2) + 1}`} />
+            <div className="mb-12">
+              <h2 className="text-2xl font-black font-headline mb-6 flex items-center gap-3">
+                <div className="p-3 bg-primary/20 rounded-2xl"><Star className="text-primary h-7 w-7 fill-current" /></div>
+                आज की विशेष प्रस्तुतियाँ
+              </h2>
+              <div className="flex gap-5 overflow-x-auto pb-8 no-scrollbar">
+                {videosLoading ? (
+                  <Skeleton className="min-w-[320px] h-[220px] rounded-[3rem]" />
+                ) : (
+                  videos?.map((v: any) => (
+                    <VideoCard key={v.id} id={v.id} title={v.title} videoUrl={v.videoUrl} type={v.type} />
+                  ))
+                )}
+                {!videosLoading && (!videos || videos.length === 0) && (
+                  <div className="min-w-full text-center py-10 text-muted-foreground text-sm font-bold">एडमिन ने अभी कोई वीडियो नहीं जोड़ा है</div>
                 )}
               </div>
-            ))
-          )}
-        </div>
+            </div>
 
-        <AdFrame label="Footer Infinite Ad" />
+            <AdFrame label="Mid-Feed Ad Slot" />
+
+            <div className="space-y-12">
+              <div className="flex items-center justify-between px-2 mb-8">
+                <h2 className="text-2xl font-black font-headline flex items-center gap-3">
+                  <div className="p-3 bg-yellow-400/10 rounded-2xl"><Sparkles className="text-yellow-600 h-7 w-7 fill-current" /></div>
+                  कलाकारों की नई दुनिया
+                </h2>
+                <LayoutGrid className="text-muted-foreground h-5 w-5" />
+              </div>
+              
+              {postsLoading ? (
+                <div className="space-y-8">
+                  <Skeleton className="h-[400px] w-full rounded-[3rem]" />
+                  <Skeleton className="h-[400px] w-full rounded-[3rem]" />
+                </div>
+              ) : (
+                realPosts?.map((post: any, index: number) => (
+                  <div key={post.id}>
+                    <PostCard
+                      id={post.id}
+                      userId={post.userId}
+                      userName={post.userName}
+                      imageUrl={post.photoUrl}
+                      title={post.title}
+                      description={post.description}
+                      likeIds={post.likeIds}
+                      isFeatured={index < 3}
+                    />
+                    
+                    {(index + 1) % 2 === 0 && (
+                      <AdFrame label={`Feed Slot ${Math.floor(index / 2) + 1}`} />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <AdFrame label="Footer Infinite Ad" />
+          </>
+        )}
 
         <div className="py-24 text-center">
            <div className="p-6 bg-white/5 shadow-inner rounded-full inline-block mb-4">

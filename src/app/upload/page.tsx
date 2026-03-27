@@ -84,13 +84,12 @@ export default function UploadPage() {
     }
 
     if (!db || !storage) {
-      toast({ variant: "destructive", title: "सिस्टम त्रुटि", description: "फायरबेस सेवाएं उपलब्ध नहीं हैं। कृपया नेटलिफाई सेटिंग्स चेक करें।" });
+      toast({ variant: "destructive", title: "सिस्टम त्रुटि", description: "सर्वर सेवाएं तैयार नहीं हैं। कृपया पेज रिफ्रेश करें।" });
       return;
     }
 
     setIsPosting(true)
     try {
-      // AI Content Moderation
       const moderation = await moderateContent({ photoDataUri: image, title, description })
       if (!moderation.isAppropriate) {
         toast({ variant: "destructive", title: "पॉलिसी उल्लंघन", description: moderation.reason })
@@ -98,13 +97,11 @@ export default function UploadPage() {
         return
       }
 
-      // Firebase Storage Upload
       const storagePath = `posts/${user.uid}/${Date.now()}.jpg`
       const storageRef = ref(storage, storagePath)
       await uploadString(storageRef, image, 'data_url')
       const photoUrl = await getDownloadURL(storageRef)
 
-      // Primary Save to Firebase Firestore
       const postData = {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0],
@@ -117,7 +114,6 @@ export default function UploadPage() {
       
       await addDoc(collection(db, "posts"), postData)
 
-      // Backup Sync: Dual Sync to MongoDB
       try {
         await fetch('/api/backup-sync', {
           method: 'POST',
@@ -128,7 +124,7 @@ export default function UploadPage() {
           })
         })
       } catch (backupError) {
-        console.warn('MongoDB Sync delayed, but Firebase is active.')
+        console.warn('MongoDB Sync delayed.')
       }
 
       toast({ title: "सफलता!", description: "आपकी फोटो पब्लिश हो गई है और सुरक्षित है!" })
