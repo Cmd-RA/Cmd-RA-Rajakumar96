@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Smartphone, Download, X } from "lucide-react"
@@ -21,14 +20,20 @@ export function AppDownloadBanner() {
   }, [])
 
   const handleInstall = async () => {
-    if (!deferredPrompt) {
-      toast({ title: "सूचना", description: "आपका ब्राउज़र पहले से ही इंस्टॉल है या PWA सपोर्ट नहीं करता।" })
+    // Priority 1: APK Download if on mobile
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      window.open("https://your-apk-link.com/app.apk", "_blank")
+      toast({ title: "सफलता", description: "APK फाइल डाउनलोड हो रही है।" })
       return
     }
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null)
+
+    // Priority 2: PWA Install
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') setDeferredPrompt(null)
+    } else {
+      toast({ title: "सूचना", description: "ऐप पहले से ही इंस्टॉल है या PWA सपोर्ट नहीं है।" })
     }
   }
 
@@ -49,9 +54,9 @@ export function AppDownloadBanner() {
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन ऐप इंस्टॉल करें!</h3>
+          <h3 className="text-xl font-bold font-headline mb-1">मोनेटाइजेशन APK डाउनलोड करें!</h3>
           <p className="text-sm opacity-90 mb-4">
-            बेहतर अनुभव और तेज़ कमाई के लिए अभी हमारी वेबसाइट को ऐप की तरह इंस्टॉल करें।
+            बेहतर अनुभव और तेज़ कमाई के लिए अभी हमारी वेबसाइट को ऐप (APK) की तरह इंस्टॉल करें।
           </p>
           
           <div className="flex flex-wrap justify-center md:justify-start gap-3">
@@ -61,13 +66,12 @@ export function AppDownloadBanner() {
               onClick={handleInstall}
             >
               <Download className="h-4 w-4" />
-              अभी इंस्टॉल करें
+              APK डाउनलोड करें
             </Button>
           </div>
         </div>
       </div>
       
-      {/* Decorative circles */}
       <div className="absolute -bottom-6 -right-6 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
       <div className="absolute -top-6 -left-6 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
     </div>
