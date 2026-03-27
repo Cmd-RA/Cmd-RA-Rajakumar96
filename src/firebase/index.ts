@@ -7,14 +7,15 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 import { getMessaging } from 'firebase/messaging';
 
+/**
+ * Initializes Firebase and its services safely.
+ * Prevents crashes due to missing or invalid API keys during SSR or build.
+ */
 export function initializeFirebase() {
   const isClient = typeof window !== 'undefined';
   
-  // API key check to prevent initialization crash
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
-    if (isClient) {
-      console.warn("Firebase Configuration is missing. Please check your Environment Variables in Netlify.");
-    }
+  // Basic validation to prevent "invalid-api-key" crash
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined" || firebaseConfig.apiKey === "") {
     return {
       firebaseApp: null,
       auth: null,
@@ -49,13 +50,25 @@ export function getSdks(firebaseApp: FirebaseApp) {
       messaging: null
     };
   }
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
-    storage: getStorage(firebaseApp),
-    messaging: typeof window !== 'undefined' ? getMessaging(firebaseApp) : null
-  };
+
+  try {
+    return {
+      firebaseApp,
+      auth: getAuth(firebaseApp),
+      firestore: getFirestore(firebaseApp),
+      storage: getStorage(firebaseApp),
+      messaging: typeof window !== 'undefined' ? getMessaging(firebaseApp) : null
+    };
+  } catch (err) {
+    console.error("Error initializing Firebase SDKs:", err);
+    return {
+      firebaseApp,
+      auth: null,
+      firestore: null,
+      storage: null,
+      messaging: null
+    };
+  }
 }
 
 export * from './provider';

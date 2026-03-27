@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { 
   Trophy, LayoutGrid, DollarSign, PlusCircle, UserCircle,
   LogOut, Loader2, Landmark, Save, AlertTriangle, CheckCircle2, ShieldCheck, MessageCircle, ExternalLink, 
-  Settings2, FileText, ShieldAlert, Heart, Info
+  Settings2, FileText, ShieldAlert, Heart, Info, Camera
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -137,14 +137,21 @@ export default function ProfilePage() {
       <div className="container max-w-xl mx-auto p-4">
         
         {/* User Ecosystem Header */}
-        <div className="flex flex-col items-center pt-8 pb-8 border-b bg-white/50 backdrop-blur-sm rounded-[3rem] shadow-sm mb-8">
+        <div className="flex flex-col items-center pt-8 pb-8 border-b bg-white/50 backdrop-blur-sm rounded-[3rem] shadow-sm mb-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-primary/10 to-accent/10 -z-10" />
+          
           <div className="relative mb-6">
-            <div className="h-32 w-32 rounded-full ring-4 ring-primary/20 overflow-hidden shadow-2xl bg-muted">
+            <div className="h-32 w-32 rounded-full ring-4 ring-primary/20 overflow-hidden shadow-2xl bg-muted group cursor-pointer">
               <img 
                 src={profileInfo.photoUrl || `https://picsum.photos/seed/${user.uid}/200`} 
                 alt="Profile" 
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-transform group-hover:scale-110"
               />
+              {!isEditing && (
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setIsEditing(true)}>
+                  <Camera className="text-white h-8 w-8" />
+                </div>
+              )}
             </div>
             {isMonetized && (
               <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2 rounded-full border-4 border-background shadow-lg">
@@ -158,13 +165,17 @@ export default function ProfilePage() {
               {profileInfo.name || user.email?.split('@')[0]}
               {isMonetized && <ShieldCheck className="h-6 w-6 text-primary" />}
             </h1>
-            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2 bg-muted/50 px-3 py-1 rounded-full inline-block">
               CREATOR ID: {user.uid.substring(0, 8)}
             </p>
-            {profileInfo.bio && (
-              <p className="mt-4 text-sm font-medium text-muted-foreground italic leading-relaxed">
+            {profileInfo.bio ? (
+              <p className="mt-4 text-sm font-medium text-muted-foreground italic leading-relaxed max-w-xs mx-auto">
                 "{profileInfo.bio}"
               </p>
+            ) : (
+              <button onClick={() => setIsEditing(true)} className="mt-4 text-[10px] font-black text-primary uppercase border-b border-primary/20 pb-0.5">
+                + अपना बायो लिखें
+              </button>
             )}
           </div>
           
@@ -255,7 +266,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <a href="https://t.me/srbis" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-[#0088cc] hover:bg-[#006699] text-white rounded-xl h-10 px-4 font-black text-xs gap-2">
+                <Button className="bg-[#0088cc] hover:bg-[#006699] text-white rounded-xl h-10 px-4 font-black text-xs gap-2 shadow-lg">
                   JOIN NOW <ExternalLink className="h-3 w-3" />
                 </Button>
               </a>
@@ -293,11 +304,12 @@ export default function ProfilePage() {
                   <div className="flex items-start gap-3">
                     <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-1">
-                      <p className="text-[11px] font-black uppercase text-primary">मोनेटाइजेशन के नियम:</p>
+                      <p className="text-[11px] font-black uppercase text-primary">कमाई के मुख्य नियम:</p>
                       <ul className="text-[10px] font-bold text-muted-foreground space-y-1">
-                        <li>• कम से कम 1,000 फॉलोअर्स होना ज़रूरी है।</li>
-                        <li>• आपकी सभी फोटो 100% असली होनी चाहिए।</li>
-                        <li>• गूगल एडसेंस के नियमों का पालन करना अनिवार्य है।</li>
+                        <li>• कम से कम 1,000 फॉलोअर्स होना अनिवार्य है।</li>
+                        <li>• आपकी सभी फोटो असली और आपकी स्वयं की होनी चाहिए।</li>
+                        <li>• अश्लील या आपत्तिजनक फोटो अपलोड करने पर अकाउंट बंद हो सकता है।</li>
+                        <li>• विज्ञापनों (Ads) के प्रदर्शन पर आपको भुगतान मिलेगा।</li>
                       </ul>
                     </div>
                   </div>
@@ -307,18 +319,18 @@ export default function ProfilePage() {
           </Card>
 
           {/* Payment Ecosystem */}
-          <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
+          <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden border-t-4 border-primary">
             <CardHeader className="bg-primary/5">
               <CardTitle className="text-lg flex items-center gap-2 font-black uppercase tracking-tight">
                 <Landmark className="h-5 w-5 text-primary" /> पेमेंट सेटिंग्स (Earnings)
               </CardTitle>
-              <CardDescription className="text-[10px] font-bold">कमाई प्राप्त करने के लिए अपना बैंक डेटा सुरक्षित करें।</CardDescription>
+              <CardDescription className="text-[10px] font-bold">कमाई सीधे अपने बैंक या GPay में प्राप्त करने के लिए जानकारी भरें।</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">बैंक अकाउंट नंबर</label>
                 <Input 
-                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold"
+                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold focus:ring-2 ring-primary/20"
                   placeholder="0000 0000 0000 0000" 
                   value={bankInfo.bankAccount}
                   onChange={(e) => setBankInfo({...bankInfo, bankAccount: e.target.value})}
@@ -327,7 +339,7 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">IFSC कोड</label>
                 <Input 
-                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold"
+                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold focus:ring-2 ring-primary/20"
                   placeholder="SBIN0000000" 
                   value={bankInfo.ifscCode}
                   onChange={(e) => setBankInfo({...bankInfo, ifscCode: e.target.value})}
@@ -336,13 +348,13 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">गूगल पे नंबर (GPay)</label>
                 <Input 
-                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold"
+                  className="rounded-2xl h-12 bg-muted/30 border-none px-6 font-bold focus:ring-2 ring-primary/20"
                   placeholder="+91 00000 00000" 
                   value={bankInfo.gpayNumber}
                   onChange={(e) => setBankInfo({...bankInfo, gpayNumber: e.target.value})}
                 />
               </div>
-              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-black shadow-lg bg-primary" onClick={handleUpdateBank} disabled={isUpdating}>
+              <Button className="w-full gap-2 rounded-2xl h-14 text-md font-black shadow-lg bg-primary hover:scale-[1.02] transition-transform" onClick={handleUpdateBank} disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
                 डेटाबेस में सुरक्षित करें
               </Button>
@@ -380,7 +392,7 @@ export default function ProfilePage() {
           ) : (
             <div className="text-center py-20 bg-muted/10 rounded-[3rem] border-4 border-dashed border-muted">
               <p className="text-muted-foreground font-black mb-6 uppercase tracking-widest text-xs">अभी कोई पोस्ट नहीं है</p>
-              <Button onClick={() => router.push("/upload")} variant="secondary" className="rounded-full px-8 font-black">पहली फोटो डालें</Button>
+              <Button onClick={() => router.push("/upload")} variant="secondary" className="rounded-full px-8 font-black shadow-md">पहली फोटो डालें</Button>
             </div>
           )}
         </div>
@@ -390,13 +402,13 @@ export default function ProfilePage() {
           <h3 className="font-black uppercase text-xs text-muted-foreground tracking-widest text-center">कानूनी और सुरक्षा (Legal & Safety)</h3>
           <div className="grid grid-cols-2 gap-3">
             <Link href="/privacy">
-              <Button variant="outline" className="w-full rounded-2xl h-12 text-[10px] font-black uppercase gap-2">
-                <ShieldAlert className="h-4 w-4" /> गोपनीयता नीति
+              <Button variant="outline" className="w-full rounded-2xl h-12 text-[10px] font-black uppercase gap-2 hover:bg-primary/5">
+                <ShieldAlert className="h-4 w-4 text-primary" /> गोपनीयता नीति
               </Button>
             </Link>
             <Link href="/terms">
-              <Button variant="outline" className="w-full rounded-2xl h-12 text-[10px] font-black uppercase gap-2">
-                <FileText className="h-4 w-4" /> नियम और शर्तें
+              <Button variant="outline" className="w-full rounded-2xl h-12 text-[10px] font-black uppercase gap-2 hover:bg-primary/5">
+                <FileText className="h-4 w-4 text-primary" /> नियम और शर्तें
               </Button>
             </Link>
           </div>
